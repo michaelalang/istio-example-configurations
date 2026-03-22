@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- deploy.yml
+- destinationrule.yml
+- gateway-deploy.yml
+- gateway.yml
+- namespace.yml
+- sa.yml
+- serviceentry.yml
+- virtualservice.yml
+- authorizationpolicy.yml
+- service.yml
+- psql-client-service.yml
+- rbac.yml
+- updater-cron.yml
+- updater-cm.yml
+
+namespace: egress-psql

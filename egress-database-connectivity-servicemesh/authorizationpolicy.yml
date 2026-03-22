@@ -1,0 +1,18 @@
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: egress-postgres
+spec:
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        ipBlocks:
+        - 127.0.0.1
+    to:
+    - operation:
+        ports:
+        - '8085'
+  selector:
+    matchLabels:
+      istio: egress-gateway

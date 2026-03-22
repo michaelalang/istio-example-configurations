@@ -1,0 +1,16 @@
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: http
+spec:
+  exportTo:
+  - '.'
+  host: http
+  trafficPolicy:
+    portLevelSettings:
+      - port:
+          number: 8443
+        tls:
+          mode: SIMPLE
+          caCertificates: /etc/istio/service-ca/service-ca.crt
+          sni: http.gateway-to-serviceca.svc

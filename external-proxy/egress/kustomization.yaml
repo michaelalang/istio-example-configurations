@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- deploy.yml
+- envoyFilter.yml
+- gateway.yml
+- service.yml
+- vs-to-egress.yml
+- vs-to-proxy.yml
+- dr.yml
+- se-squid.yml
+- se-external.yml
+
+namespace: proxytest

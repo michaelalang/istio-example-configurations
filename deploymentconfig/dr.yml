@@ -1,0 +1,14 @@
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: k8sapi
+spec:
+  exportTo:
+  - '.'
+  host: 172.31.0.1
+  trafficPolicy:
+    portLevelSettings:
+      - port:
+          number: 443
+        tls:
+          mode: DISABLE

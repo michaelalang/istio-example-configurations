@@ -1,0 +1,23 @@
+# this service is only mandatory to retrieve the POD IP
+apiVersion: v1
+kind: Service
+metadata:
+  name: psql-client
+  namespace: egress-psql
+  labels:
+    egress.io/managed: egress-postgres
+spec:
+  clusterIP: None
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: psql
+    port: 65535
+    protocol: TCP
+    targetPort: 65535
+  selector:
+    egress.io/managed: egress-postgres
+  sessionAffinity: None
+  type: ClusterIP

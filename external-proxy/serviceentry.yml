@@ -1,0 +1,38 @@
+apiVersion: networking.istio.io/v1
+kind: ServiceEntry
+metadata:
+  name: squid
+spec:
+  addresses:
+    - ip.ip.ip.ip
+  exportTo:
+    - .
+  hosts:
+    - squid-proxy
+  location: MESH_EXTERNAL
+  ports:
+    - name: http
+      number: 8080
+      protocol: TCP
+      targetPort: 8080
+  resolution: NONE
+---
+apiVersion: networking.istio.io/v1
+kind: ServiceEntry
+metadata:
+  name: squid-ssl
+spec:
+  addresses:
+    - ip.ip.ip.ip
+  exportTo:
+    - .
+  hosts:
+    - squid-proxy
+  location: MESH_EXTERNAL
+  ports:
+    - name: https
+      number: 8443
+      protocol: TLS
+      targetPort: 8080
+  resolution: NONE
+---

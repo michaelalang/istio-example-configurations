@@ -1,0 +1,66 @@
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: http
+spec:
+  exportTo:
+  - '.'
+  gateways:
+    - gateway-v1
+  hosts:
+    - http.apps.example.com
+  http:
+    - match:
+      - uri:
+          exact: '/index.html'
+      route:
+        - destination:
+            host: http
+            port:
+              number: 8080
+          weight: 100
+    - match:
+      - uri:
+          exact: '/2'
+      route:
+        - destination:
+            host: http
+            port:
+              number: 8080
+          weight: 100
+    - match:
+      - uri:
+          exact: '/4'
+      route:
+        - destination:
+            host: http
+            port:
+              number: 8080
+          weight: 100
+    - match:
+      - uri:
+          exact: '/6'
+      route:
+        - destination:
+            host: http
+            port:
+              number: 8080
+          weight: 100
+    - match:
+      - uri:
+          exact: '/8'
+      route:
+        - destination:
+            host: http
+            port:
+              number: 8080
+          weight: 100
+    - directResponse:
+       status: 404
+       body:
+         string: '{"error": "not found"}'
+       headers:
+         response:
+           set:
+             content-type: "application/json"
+---

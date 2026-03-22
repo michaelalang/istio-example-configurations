@@ -1,0 +1,16 @@
+apiVersion: networking.istio.io/v1
+kind: ServiceEntry
+metadata:
+  name: internal
+spec:
+  hosts:
+  - css-perf-pg.cajxzvn40anb.us-east-2.rds.amazonaws.com
+  ports:
+  - name: tcp-rds
+    number: 8085
+    protocol: TCP
+  resolution: DNS # <DNS is preferred
+  #endpoints:
+  #- address: 127.0.0.1 # <with STATIC
+  exportTo:
+  - .

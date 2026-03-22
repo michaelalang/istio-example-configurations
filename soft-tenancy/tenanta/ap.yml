@@ -1,0 +1,11 @@
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: strict-tenant-isolation
+  namespace: tenant-a
+spec:
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        namespaces: ["tenant-a"]

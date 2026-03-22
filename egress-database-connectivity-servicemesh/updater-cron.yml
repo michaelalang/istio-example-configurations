@@ -1,0 +1,46 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: egress-ip-updater
+spec:
+  concurrencyPolicy: Replace
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    metadata:
+      creationTimestamp: null
+    spec:
+      template:
+        metadata:
+          creationTimestamp: null
+          labels:
+            sidecar.istio.io/inject: 'false'
+        spec:
+          containers:
+            - args:
+                - /bin/bash
+                - -c
+                - /bin/bash -x /opt/updater egress-psql
+              image: quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:dc7dfd982b89bad45aa2568a8f722772239c724cba519892dbac416e63970c4a
+              imagePullPolicy: Always
+              name: debug
+              resources: {}
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: File
+              volumeMounts:
+                - mountPath: /opt
+                  name: updater
+          dnsPolicy: ClusterFirst
+          restartPolicy: OnFailure
+          schedulerName: default-scheduler
+          securityContext: {}
+          serviceAccount: updater
+          serviceAccountName: updater
+          terminationGracePeriodSeconds: 30
+          volumes:
+            - configMap:
+                defaultMode: 420
+                name: updater
+              name: updater
+  schedule: '* * * * *'
+  successfulJobsHistoryLimit: 1
+  suspend: false

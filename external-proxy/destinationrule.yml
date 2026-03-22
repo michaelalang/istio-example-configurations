@@ -1,0 +1,15 @@
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: squid-https
+spec:
+  exportTo:
+    - .
+  host: ip.ip.ip.ip
+  trafficPolicy:
+    portLevelSettings:
+      - port:
+          number: 8443
+        tls:
+          mode: DISABLE
+

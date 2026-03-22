@@ -1,0 +1,16 @@
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: egress-gateway
+spec:
+  exportTo:
+  - .
+  selector:
+    istio: egress-gateway
+  servers:
+  - port:
+      number: 8085
+      name: tcp-rds
+      protocol: TCP
+    hosts:
+    - css-perf-pg.cajxzvn40anb.us-east-2.rds.amazonaws.com

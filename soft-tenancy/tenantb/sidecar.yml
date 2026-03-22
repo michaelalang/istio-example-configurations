@@ -1,0 +1,10 @@
+apiVersion: networking.istio.io/v1
+kind: Sidecar
+metadata:
+  name: default-sidecar
+  namespace: tenant-b
+spec:
+  egress:
+  - hosts:
+    - "./*"
+    - "istio-system/*"

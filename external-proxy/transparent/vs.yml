@@ -1,0 +1,25 @@
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: enforce-squid-proxy
+spec:
+  hosts:
+    - '*.google.com'
+  http:
+    - match:
+        - port: 80
+      route:
+        - destination:
+            host: squid-proxy.local
+            port:
+              number: 8443
+  tls:
+    - match:
+        - port: 443
+          sniHosts:
+            - '*.google.com'
+      route:
+        - destination:
+            host: squid-proxy.local
+            port:
+              number: 8443

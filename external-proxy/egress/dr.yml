@@ -1,0 +1,24 @@
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: disable-mtls-to-egress
+  namespace: proxytest
+spec:
+  host: istio-egressgateway
+  trafficPolicy:
+    tls:
+      mode: DISABLE
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: squid-https
+spec:
+  host: squid-proxy.local
+  trafficPolicy:
+    portLevelSettings:
+      - port:
+          number: 8443
+        tls:
+          caCertificates: /etc/pki/tls/certs/ca-bundle.crt
+          mode: SIMPLE

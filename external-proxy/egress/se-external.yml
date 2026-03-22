@@ -1,0 +1,18 @@
+apiVersion: networking.istio.io/v1
+kind: ServiceEntry
+metadata:
+  name: external-targets
+  namespace: proxytest
+spec:
+  hosts:
+    - '*.com'
+    - '*.org'
+  location: MESH_EXTERNAL
+  ports:
+    - name: https
+      number: 443
+      protocol: TLS
+    - name: http
+      number: 80
+      protocol: HTTP
+  resolution: NONE

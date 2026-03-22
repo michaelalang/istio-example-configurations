@@ -1,0 +1,11 @@
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: passthrough
+spec:
+  portLevelMtls:
+    '8443':
+      mode: DISABLE
+  selector:
+    matchLabels:
+      app: http

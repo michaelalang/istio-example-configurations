@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dex-config
+data:
+  config.yaml: |
+    issuer: https://sso.apps.example.com
+    storage:
+      type: memory
+    web:
+      http: 0.0.0.0:5556
+    enablePasswordDB: true
+    oauth2:
+      passwordConnector: local
+    
+    staticClients:
+    - id: Test
+      redirectURIs:
+      - 'https://oauth-mesh.apps.example.com/oauth2/callback'
+      name: 'Testing Client'
+      secret: 39720580-fad4-45b2-9c2b-cc9ea252d37c
+    
+    # Dex needs to know WHICH connector to use for the password grant
+    # Since we aren't using LDAP/AD, we use the 'local' password DB
+    # htpasswd -n -B -C 10 -b dummy "password"
+    staticPasswords:
+    - email: "test@example.com"
+      hash: '$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W'
+      username: "test"
+      userID: "3c0e7c65-d9af-48f3-966e-dd693413ff5c"

@@ -1,0 +1,10 @@
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: postgres
+spec:
+  exportTo:
+  - .
+  host: egress-gateway.egress-psql.svc.cluster.local
+  subsets:
+  - name: external

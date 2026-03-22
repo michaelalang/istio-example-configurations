@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- namespace.yml
+- destinationrule.yml
+- http-deploy.yml
+- http-service.yml
+- httpcontent.yml
+- proxy-trust-bundle.yml
+- serviceentry.yml
+- cert.yml
+
+namespace: proxytest

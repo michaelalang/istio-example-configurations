@@ -1,0 +1,23 @@
+apiVersion: extensions.istio.io/v1alpha1
+kind: WasmPlugin
+metadata:
+  name: coraza-waf-gw
+spec:
+  imagePullPolicy: IfNotPresent
+  phase: AUTHN
+  pluginConfig:
+    rules: |
+      Include @recommended-conf
+      Include @crs-setup-conf
+      Include @owasp_crs/*.conf
+      SecRuleEngine On
+      SecRule REQUEST_URI "@streq /admin" \
+        "id:101,phase:1,t:lowercase,deny,status:403,msg:'Denied request to %{REQUEST_URI}'"
+      SecRule REQUEST_HEADERS:user-agent "@contains curl" "id:102,phase:1,t:lowercase,deny"
+      SecRule REQUEST_HEADERS:x-forwarded-for "@contains 192.168.192.37" \
+        "id:103,phase:1,t:lowercase,deny,msg:'Denied request from %{request_headers.x-forwarded-for}'"
+      SecRule REMOTE_ADDR "127.0.0.1" "id:100,phase:1,pass,log,logdata:'Request from localhost'"
+  selector:
+    matchLabels:
+      istio: gateway-v1
+  url: oci://ghcr.io/corazawaf/coraza-proxy-wasm:latest

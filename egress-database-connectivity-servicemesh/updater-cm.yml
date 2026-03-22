@@ -1,0 +1,14 @@
+apiVersion: v1
+data:
+  updater: |
+    #!/bin/bash -x
+
+    namespace=$1
+    addresses=$(oc -n ${namespace} get endpoints -l egress.io/managed=egress-postgres -o jsonpath='{range .items[*]}{range .subsets[*]}{range .addresses[*]}{.ip}{"\n"}{end}{end}{end}' | uniq | python -c 'import json, sys; print(json.dumps(sys.stdin.read().strip().split("\n")))')
+
+    oc -n ${namespace} patch $(oc -n ${namespace} get authorizationpolicy egress-postgres -o name) --type=merge \
+      -p "{\"spec\": {\"rules\": [{\"from\": [{\"source\": {\"ipBlocks\": ${addresses}}} ] }]}}"
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: updater

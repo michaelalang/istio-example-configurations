@@ -1,0 +1,14 @@
+apiVersion: v1
+data:
+  ca-bundle.crt: |
+    # proxy CA
+    -----BEGIN CERTIFICATE-----
+    ...
+    -----END CERTIFICATE-----
+    # oc get cm config-trusted-cabundle -o yaml | yq -r '.data."ca-bundle.crt"'
+    -----BEGIN CERTIFICATE-----
+    ...
+    -----END CERTIFICATE-----
+kind: ConfigMap
+metadata:
+  name: proxy-trusted-cabundle

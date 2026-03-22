@@ -1,0 +1,16 @@
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TLSRoute
+metadata:
+  name: https-passthrough
+spec:
+  parentRefs:
+  - name: http-gateway
+    namespace: gwapi-to-istiogwservice
+  hostnames: 
+  - "https.apps.example.com" # The SNI your client requests
+  rules:
+  - backendRefs:
+    - name: gateway-v1
+      namespace: gwapi-to-istiogw
+      port: 443
+      weight: 100

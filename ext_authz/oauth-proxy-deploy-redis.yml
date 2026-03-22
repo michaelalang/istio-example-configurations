@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oauth2-proxy
+  namespace: istio-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oauth2-proxy
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/nativeSidecar: "true"
+      labels:
+        app: oauth2-proxy
+        sidecar.istio.io/inject: "true"
+    spec:
+      containers:
+      - name: oauth2-proxy
+        image: quay.io/oauth2-proxy/oauth2-proxy:latest
+        ports:
+        - containerPort: 4180
+          protocol: TCP
+        env:
+        - name: OAUTH2_PROXY_CLIENT_ID
+          valueFrom: { secretKeyRef: { name: oauth2-proxy-creds, key: client-id } }
+        - name: OAUTH2_PROXY_CLIENT_SECRET
+          valueFrom: { secretKeyRef: { name: oauth2-proxy-creds, key: client-secret } }
+        - name: OAUTH2_PROXY_COOKIE_SECRET
+          valueFrom: { secretKeyRef: { name: oauth2-proxy-creds, key: cookie-secret } }
+        args:
+        - --http-address=0.0.0.0:4180
+        - --provider=oidc
+        - --oidc-issuer-url=https://sso.apps.example.com
+        - --email-domain=*
+        - --reverse-proxy=true
+        - --cookie-secure=true
+        - --cookie-samesite=lax 
+        - --cookie-domain=.apps.example.com
+        - --whitelist-domain=.apps.example.com
+        - --whitelist-domain=http.apps.example.com
+        - --whitelist-domain=oauth-mesh.apps.example.com
+        - --whitelist-domain=*.apps.example.com
+        - --whitelist-domain=*
+        - --redirect-url=https://oauth-mesh.apps.example.com/oauth2/callback
+        - --upstream=static://200
+        - --skip-provider-button=true
+        - --skip-jwt-bearer-tokens=true
+        - --ssl-insecure-skip-verify=true
+        - --session-store-type=redis
+        - --redis-connection-url=redis://127.0.0.1:6379
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+          name: redis

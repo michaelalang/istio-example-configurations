@@ -1,0 +1,48 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: restrict-paths-lua
+  namespace: restrictpaths
+spec:
+  workloadSelector:
+    labels:
+      istio: gateway-v1
+  configPatches:
+    - applyTo: HTTP_FILTER
+      match:
+        context: GATEWAY
+        listener:
+          filterChain:
+            filter:
+              name: "envoy.filters.network.http_connection_manager"
+              subFilter:
+                name: "envoy.filters.http.router"
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: envoy.filters.http.lua
+          typed_config:
+            "@type": "type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua"
+            inline_code: |
+              function envoy_on_request(request_handle)
+                local path = request_handle:headers():get(":path")
+                -- Define our allowed paths (accounting for the leading slash)
+                local allowed = {
+                  ["/index.html"] = true,
+                  ["/2"] = true,
+                  ["/4"] = true,
+                  ["/6"] = true,
+                  ["/8"] = true
+                }
+
+                -- Case-insensitive check (matches (?i) behavior)
+                if not allowed[string.lower(path)] then
+                  request_handle:respond(
+                    {
+                      [":status"] = "404",
+                      ["content-type"] = "application/json"
+                    },
+                    '{"error": "not found"}'
+                  )
+                end
+              end

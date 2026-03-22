@@ -1,0 +1,282 @@
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  name: httpd
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    app: httpd
+  strategy:
+    activeDeadlineSeconds: 21600
+    resources: {}
+    rollingParams:
+      intervalSeconds: 1
+      maxSurge: 25%
+      maxUnavailable: 25%
+      timeoutSeconds: 600
+      updatePeriodSeconds: 1
+    type: Rolling
+  template:
+    metadata:
+      annotations:
+        istio.io/rev: default
+        k8s.v1.cni.cncf.io/networks: default/istio-cni
+        kubectl.kubernetes.io/default-container: container
+        kubectl.kubernetes.io/default-logs-container: container
+        prometheus.io/path: /stats/prometheus
+        prometheus.io/port: "15020"
+        prometheus.io/scrape: "true"
+        sidecar.isito.io/nativeSidecar: "true"
+        sidecar.istio.io/interceptionMode: REDIRECT
+        sidecar.istio.io/status: '{"initContainers":["istio-validation"],"containers":["istio-proxy"],"volumes":["workload-socket","credential-socket","workload-certs","istio-envoy","istio-data","istio-podinfo","istio-token","istiod-ca-cert"],"imagePullSecrets":null,"revision":"default"}'
+        traffic.sidecar.istio.io/excludeInboundPorts: "15020"
+        traffic.sidecar.istio.io/includeInboundPorts: '*'
+        traffic.sidecar.istio.io/includeOutboundIPRanges: '*'
+      labels:
+        app: httpd
+        security.istio.io/tlsMode: istio
+        service.istio.io/canonical-name: httpd
+        service.istio.io/canonical-revision: latest
+        sidecar.istio.io/inject: "true"
+        topology.istio.io/network: default
+    spec:
+      containers:
+      - image: image-registry.openshift-image-registry.svc:5000/openshift/httpd:latest
+        imagePullPolicy: Always
+        name: container
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /var/www/html/index.html
+          name: httpcontent
+          subPath: index.html
+      - args:
+        - proxy
+        - sidecar
+        - --domain
+        - $(POD_NAMESPACE).svc.cluster.local
+        - --proxyLogLevel=warning
+        - --proxyComponentLogLevel=misc:error
+        - --log_output_level=http:debug,http2:debug,router:debug,rbac:debug
+        - --log_as_json
+        env:
+        - name: PILOT_CERT_PROVIDER
+          value: istiod
+        - name: CA_ADDR
+          value: istiod-default.istio-system.svc:15012
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: INSTANCE_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: SERVICE_ACCOUNT
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.serviceAccountName
+        - name: HOST_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: ISTIO_CPU_LIMIT
+          valueFrom:
+            resourceFieldRef:
+              divisor: "0"
+              resource: limits.cpu
+        - name: PROXY_CONFIG
+          value: |
+            {"discoveryAddress":"istiod-default.istio-system.svc:15012","proxyMetadata":{"ISTIO_META_DNS_AUTO_ALLOCATE":"true","ISTIO_META_DNS_CAPTURE":"true"},"gatewayTopology":{"numTrustedProxies":3},"meshId":"default"}
+        - name: ISTIO_META_POD_PORTS
+          value: |-
+            [
+                {"containerPort":8080,"protocol":"TCP"}
+            ]
+        - name: ISTIO_META_APP_CONTAINERS
+          value: container
+        - name: GOMEMLIMIT
+          valueFrom:
+            resourceFieldRef:
+              divisor: "0"
+              resource: limits.memory
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              divisor: "0"
+              resource: limits.cpu
+        - name: ISTIO_META_NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: ISTIO_META_INTERCEPTION_MODE
+          value: REDIRECT
+        - name: ISTIO_META_MESH_ID
+          value: default
+        - name: TRUST_DOMAIN
+          value: cluster.local
+        - name: ISTIO_META_DNS_AUTO_ALLOCATE
+          value: "true"
+        - name: ISTIO_META_DNS_CAPTURE
+          value: "true"
+        - name: ISTIO_META_CLUSTER_ID
+          value: default
+        - name: ISTIO_META_NETWORK
+          value: default
+        image: registry.redhat.io/openshift-service-mesh/istio-proxyv2-rhel9@sha256:b17a2794ec7b94f5c67ac7b6b230b9a699d0eadef0bc35ede58b17df64aa26fc
+        name: istio-proxy
+        ports:
+        - containerPort: 15090
+          name: http-envoy-prom
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 4
+          httpGet:
+            path: /healthz/ready
+            port: 15021
+          periodSeconds: 15
+          timeoutSeconds: 3
+        resources:
+          limits:
+            cpu: "2"
+            memory: 1Gi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsGroup: 1337
+          runAsNonRoot: true
+          runAsUser: 1337
+        startupProbe:
+          failureThreshold: 600
+          httpGet:
+            path: /healthz/ready
+            port: 15021
+          periodSeconds: 1
+          timeoutSeconds: 3
+        volumeMounts:
+        - mountPath: /var/run/secrets/workload-spiffe-uds
+          name: workload-socket
+        - mountPath: /var/run/secrets/credential-uds
+          name: credential-socket
+        - mountPath: /var/run/secrets/workload-spiffe-credentials
+          name: workload-certs
+        - mountPath: /var/run/secrets/istio
+          name: istiod-ca-cert
+        - mountPath: /var/lib/istio/data
+          name: istio-data
+        - mountPath: /etc/istio/proxy
+          name: istio-envoy
+        - mountPath: /var/run/secrets/tokens
+          name: istio-token
+        - mountPath: /etc/istio/pod
+          name: istio-podinfo
+      dnsPolicy: ClusterFirst
+      initContainers:
+      - args:
+        - istio-iptables
+        - -p
+        - "15001"
+        - -z
+        - "15006"
+        - -u
+        - "1337"
+        - -m
+        - REDIRECT
+        - -i
+        - '*'
+        - -x
+        - ""
+        - -b
+        - '*'
+        - -d
+        - 15090,15021,15020
+        - --log_output_level=http:debug,http2:debug,router:debug,rbac:debug
+        - --log_as_json
+        - --run-validation
+        - --skip-rule-apply
+        env:
+        - name: ISTIO_META_DNS_AUTO_ALLOCATE
+          value: "true"
+        - name: ISTIO_META_DNS_CAPTURE
+          value: "true"
+        image: registry.redhat.io/openshift-service-mesh/istio-proxyv2-rhel9@sha256:b17a2794ec7b94f5c67ac7b6b230b9a699d0eadef0bc35ede58b17df64aa26fc
+        name: istio-validation
+        resources:
+          limits:
+            cpu: "2"
+            memory: 1Gi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsGroup: 1337
+          runAsNonRoot: true
+          runAsUser: 1337
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: workload-socket
+      - name: credential-socket
+      - name: workload-certs
+      - emptyDir:
+          medium: Memory
+        name: istio-envoy
+      - emptyDir: {}
+        name: istio-data
+      - downwardAPI:
+          items:
+          - fieldRef:
+              fieldPath: metadata.labels
+            path: labels
+          - fieldRef:
+              fieldPath: metadata.annotations
+            path: annotations
+        name: istio-podinfo
+      - name: istio-token
+        projected:
+          sources:
+          - serviceAccountToken:
+              audience: istio-ca
+              expirationSeconds: 43200
+              path: istio-token
+      - configMap:
+          name: istio-ca-root-cert
+        name: istiod-ca-cert
+      - configMap:
+          name: httpcontent
+        name: httpcontent
+  test: false
+  triggers:
+  - type: ConfigChange
+status:
+  availableReplicas: 0
+  latestVersion: 0
+  observedGeneration: 0
+  replicas: 0
+  unavailableReplicas: 0
+  updatedReplicas: 0
+---

@@ -1,0 +1,11 @@
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: gwapi-to-mesh
+spec:
+  selector:
+    matchLabels:
+      app: http
+  portLevelMtls:
+    '8080':
+      mode: PERMISSIVE

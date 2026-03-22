@@ -1,0 +1,41 @@
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: http
+spec:
+  exportTo:
+  - '.'
+  gateways:
+    - gateway-v1
+  hosts:
+    - http.apps.example.com
+  http:
+    - route:
+        - destination:
+            host: http
+            port:
+              number: 8443
+          weight: 100
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: http-passthrough
+spec:
+  exportTo:
+  - '.'
+  gateways:
+    - gateway-v1
+  hosts:
+    - http-passthrough.apps.example.com
+  tls:
+    - match:
+        - sniHosts:
+            - http-passthrough.apps.example.com
+      route:
+        - destination:
+            host: http
+            port:
+              number: 8443
+          weight: 100
+---

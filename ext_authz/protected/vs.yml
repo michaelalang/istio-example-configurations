@@ -1,0 +1,51 @@
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: oauth
+spec:
+  exportTo:
+  - '.'
+  gateways:
+    - gateway-v1
+  hosts:
+    - oauth-mesh.apps.example.com
+  http:
+    - match:
+      - uri:
+          prefix: /oauth2/
+      route:
+        - destination:
+            host: oauth2-proxy.istio-system.svc.cluster.local
+            port:
+              number: 4180
+          weight: 100
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: http
+spec:
+  exportTo:
+  - '.'
+  gateways:
+    - gateway-v1
+  hosts:
+    - http.apps.example.com
+  http:
+    - match:
+      - uri:
+          prefix: /oauth2/
+      route:
+        - destination:
+            host: oauth2-proxy.istio-system.svc.cluster.local
+            port:
+              number: 4180
+    - match:
+      - uri:
+          prefix: "/"
+      route:
+        - destination:
+            host: http
+            port:
+              number: 8080
+          weight: 100

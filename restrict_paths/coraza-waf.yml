@@ -1,0 +1,24 @@
+apiVersion: extensions.istio.io/v1alpha1
+kind: WasmPlugin
+metadata:
+  name: coraza-waf-gw
+  namespace: restrictpaths
+spec:
+  imagePullPolicy: IfNotPresent
+  phase: AUTHN
+  pluginConfig:
+    rules: |
+      SecRuleEngine On
+      # Use 'allow' to stop processing once a match is found
+      SecRule REQUEST_URI "@streq /" "id:101,phase:1,allow,nolog"
+      SecRule REQUEST_URI "@streq /2" "id:102,phase:1,allow,nolog"
+      SecRule REQUEST_URI "@streq /4" "id:103,phase:1,allow,nolog"
+      SecRule REQUEST_URI "@streq /6" "id:104,phase:1,allow,nolog"
+      SecRule REQUEST_URI "@streq /8" "id:105,phase:1,allow,nolog"
+      
+      # Catch-all: Deny everything else
+      SecRule REQUEST_URI "@rx ^/.*" "id:99999,phase:1,deny,status:404,msg:'Not found',log"
+  selector:
+    matchLabels:
+      istio: gateway-v1
+  url: oci://ghcr.io/corazawaf/coraza-proxy-wasm:latest

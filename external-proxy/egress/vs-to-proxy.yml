@@ -1,0 +1,29 @@
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: egress-to-squid
+spec:
+  hosts:
+  - "*.com"
+  - "*.org"
+  gateways:
+  - egress-gateway
+  http:
+  - match:
+    - port: 80
+    route:
+    - destination:
+        host: squid-proxy.local
+        port:
+          number: 8443
+  tls:
+  - match:
+    - port: 443
+      sniHosts:
+      - "*.com"
+      - "*.org"
+    route:
+    - destination:
+        host: squid-proxy.local
+        port:
+          number: 8443

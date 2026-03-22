@@ -1,0 +1,30 @@
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: sso-access
+spec:
+  selector:
+    matchLabels:
+      istio: gateway-v1
+  action: ALLOW
+  rules:
+    - to:
+      - operation:
+          hosts: ["sso.apps.example.com"]
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-oauth2-callback
+spec:
+  selector:
+    matchLabels:
+      istio: gateway-v1
+  action: ALLOW
+  rules:
+  - to:
+    - operation:
+        # Explicitly allow traffic to the proxy's domain and paths
+        hosts: ["oauth-mesh.apps.example.com"]
+        paths: ["/oauth2/*"]
+---

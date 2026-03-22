@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: egressgateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      istio: egressgateway
+  template:
+    metadata:
+      labels:
+        istio: egressgateway
+        sidecar.istio.io/inject: "true" 
+      annotations:
+        inject.istio.io/templates: "gateway"
+        sidecar.istio.io/componentLogLevel: router:debug,http:debug,http2:debug
+    spec:
+      containers:
+      - name: istio-proxy
+        image: auto 
+        volumeMounts:
+          - mountPath: /etc/pki/tls/certs/ca-bundle.crt
+            name: squidca
+            subPath: ca-bundle.crt
+      volumes:
+        - name: squidca
+          configMap:
+            defaultMode: 420
+            name: proxy-trusted-cabundle
+            items:
+              - key: ca-bundle.crt
+                path: ca-bundle.crt

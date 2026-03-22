@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway-v1
+spec:
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+    - appProtocol: http
+      name: http2
+      port: 80
+      protocol: TCP
+      targetPort: 8080
+    - appProtocol: https
+      name: https
+      port: 443
+      protocol: TCP
+      targetPort: 8443
+  selector:
+    istio: gateway-v1
+  sessionAffinity: None
+  type: LoadBalancer

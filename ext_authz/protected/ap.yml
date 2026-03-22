@@ -1,0 +1,34 @@
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: ext-auth-policy
+spec:
+  selector:
+    matchLabels:
+      istio: gateway-v1 
+  action: CUSTOM
+  provider:
+    name: "oauth2-proxy"
+  rules:
+  - to:
+    - operation:
+        hosts: ["http.apps.example.com"]
+        paths: ["/*"]
+        notPaths: 
+        - "/oauth2/*"
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-app-traffic-after-custom
+spec:
+  selector:
+    matchLabels:
+      istio: gateway-v1
+  action: ALLOW
+  rules:
+  - to:
+    - operation:
+        hosts: ["http.apps.example.com"]
+        paths: ["/*"]
+

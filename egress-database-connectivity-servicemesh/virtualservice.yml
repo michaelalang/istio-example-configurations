@@ -1,0 +1,34 @@
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: postgres
+spec:
+  hosts:
+  - css-perf-pg.cajxzvn40anb.us-east-2.rds.amazonaws.com
+  gateways:
+  - mesh
+  - egress-gateway
+  exportTo:
+  - .
+  tcp:
+  - match:
+    - gateways:
+      - mesh
+      port: 8085
+    route:
+    - destination:
+        host: egress-gateway.egress-psql.svc.cluster.local
+        subset: external
+        port:
+          number: 8085
+      weight: 100
+  - match:
+    - gateways:
+      - egress-gateway
+      port: 8085
+    route:
+    - destination:
+        host: css-perf-pg.cajxzvn40anb.us-east-2.rds.amazonaws.com
+        port:
+          number: 8085
+      weight: 100

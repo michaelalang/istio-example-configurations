@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- cert.yml
+- gateway-deploy.yml
+- gateway-service.yml
+- gateway.yml
+- http-deploy.yml
+- http-service.yml
+- namespace.yml
+- rbac.yml
+- route.yml
+- vs.yml
+- cm.yml
+- envoyfilter.yml
+- dr.yml
+
+namespace: gateway-header-removed

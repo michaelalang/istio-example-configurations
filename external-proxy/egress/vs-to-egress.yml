@@ -1,0 +1,32 @@
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: mesh-to-egress
+  namespace: default
+spec:
+  exportTo:
+  - '.'
+  hosts:
+  - "*.com"
+  - "*.org"
+  gateways:
+  - mesh 
+  http:
+  - match:
+    - port: 80
+    route:
+    - destination:
+        host: istio-egressgateway
+        port:
+          number: 80
+  tls:
+  - match:
+    - port: 443
+      sniHosts:
+      - "*.com"
+      - "*.org"
+    route:
+    - destination:
+        host: istio-egressgateway
+        port:
+          number: 443
