@@ -1,4 +1,6 @@
-=== CRD LIMITS DETECTED ===
+# CRD LIMITS DETECTED #
+
+**NOTE** still you have the KubeAPI limitation in size besides the fact that all distributed attributes (EDS,...) will bloat your entire Pilot configuration and therefor push and update times.
 
 | CRD                                      | Attribute Path                                   | Limit Type    |   Value |
 |:-----------------------------------------|:-------------------------------------------------|:--------------|--------:|
