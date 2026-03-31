@@ -1,0 +1,26 @@
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: grpcserver
+spec:
+  exportTo:
+  - '.'
+  gateways:
+    - gateway-v1
+  hosts:
+    - "grpc.apps.example.com"
+  http:
+    - match:
+        - uri:
+            prefix: /
+      timeout: 5s
+      route:
+        - destination:
+            host: grpcserver
+            subset: stable
+          weight: 100
+        - destination:
+            host: grpcserver
+            subset: canary
+          weight: 0
+

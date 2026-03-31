@@ -1,0 +1,21 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: grpc
+  annotations:
+    haproxy.router.openshift.io/timeout: 5s
+  labels:
+    zonename: zone1
+spec:
+  host: grpc.apps.example.com
+  port:
+    targetPort: https
+  tls:
+    insecureEdgeTerminationPolicy: Redirect
+    termination: passthrough
+  to:
+    kind: Service
+    name: gateway-v1
+    weight: 100
+  wildcardPolicy: None
+---

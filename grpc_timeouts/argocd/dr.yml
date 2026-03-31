@@ -1,0 +1,29 @@
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: grpcserver
+spec:
+  exportTo:
+  - '.'
+  host: grpcserver
+  subsets:
+    - labels:
+        version: stable
+      name: stable
+    - labels:
+        version: canary
+      name: canary
+  trafficPolicy:
+    connectionPool:
+      http:
+        h2UpgradePolicy: UPGRADE
+        http2MaxRequests: 1
+        idleTimeout: 5s
+        maxConcurrentStreams: 1
+        maxRequestsPerConnection: 1
+        maxRetries: 1
+        useClientProtocol: false
+      tcp:
+        connectTimeout: 2s
+        maxConnectionDuration: 5s
+

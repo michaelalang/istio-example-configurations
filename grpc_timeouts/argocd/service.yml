@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: grpcserver
+spec:
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+    - name: grpcserver
+      port: 50051
+      protocol: TCP
+      targetPort: 50051
+      appProtocol: grpc
+  selector:
+    app: grpcserver
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grpc-canary
+spec:
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+    - appProtocol: grpc
+      name: grpcserver
+      port: 50051
+      protocol: TCP
+      targetPort: 50051
+  selector:
+    app: grpcserver
+    version: canary
+  sessionAffinity: None
+  type: ClusterIP

@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- deploy-stable.yml
+- deploy-canary.yml
+- namespace.yml
+- service.yml
+- secret.yml
+- vs.yml
+- dr.yml
+- gateway-service.yml
+- gateway-deploy.yml
+- gateway.yml
+- rbac.yml
+- cert.yml
+- route.yml
+
+namespace: meshgrpc
+images:
+- name: localhost/grpc
+  newName: quay.io/your-repo/grpc

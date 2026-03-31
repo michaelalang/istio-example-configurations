@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grpcserver-canary
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: grpcserver
+      version: canary
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/nativeSidecar: 'true'
+      creationTimestamp: null
+      labels:
+        sidecar.istio.io/inject: 'true'
+        app: grpcserver
+        version: canary
+    spec:
+      imagePullSecrets:
+      - name: quay
+      containers:
+        - image: localhost/grpc:v1.0.0
+          imagePullPolicy: Always
+          name: grpcserver
+          ports:
+            - containerPort: 50051
+              protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          env:
+          - name: GRPC_TARGET
+            value: grpc.apps.example.com:443
+          - name: CA_CERT_PATH
+            value: /grpctls/ca.crt
+          volumeMounts:
+          - mountPath: /grpctls
+            name: grpctls
+            readOnly: true
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - secret:
+          secretName: gateway-secret
+        name: grpctls

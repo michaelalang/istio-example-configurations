@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package timeout_test;
+
+service TimeoutTester {
+  // Simulates a task that takes a specific amount of time
+  rpc TestTimeout (TimeoutRequest) returns (TimeoutResponse) {}
+}
+
+message TimeoutRequest {
+  int32 sleep_seconds = 1;
+}
+
+message TimeoutResponse {
+  string message = 1;
+}
