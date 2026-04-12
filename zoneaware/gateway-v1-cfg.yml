@@ -1,0 +1,17 @@
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: gateway-v1
+spec:
+  selector:
+    istio: gateway-v1
+  servers:
+    - hosts:
+        - http.apps.example.com
+      port:
+        name: https
+        number: 8443
+        protocol: HTTPS
+      tls:
+        credentialName: gateway-secret
+        mode: SIMPLE

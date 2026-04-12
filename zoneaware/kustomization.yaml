@@ -1,0 +1,27 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- cert.yml
+- dr.yml
+- gateway-v1-svc.yml
+- gateway-v1.yml
+- gateway-v2-svc.yml
+- gateway-v2.yml
+- gateway-v1-cfg.yml
+- gateway-v2-cfg.yml
+- http-svc.yml
+- http-v1.yml
+- http-v2.yml
+- http-v3.yml
+- namespace.yml
+- pullsecret.yml
+- rbac.yml
+- vs.yml
+- route-zone1.yml
+- route-zone2.yml
+
+namespace: hcp1-ns1
+images:
+- name: docker.io/kennethreitz/httpbin
+  newName: quay.io/rhn_support_milang/mockbin
+  newTag: aio-py3.13

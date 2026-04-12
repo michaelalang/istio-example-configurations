@@ -1,0 +1,18 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  labels:
+    zonename: zone1
+  name: http-zone1
+spec:
+  host: http.apps.example.com
+  port:
+    targetPort: https
+  tls:
+    insecureEdgeTerminationPolicy: Redirect
+    termination: passthrough
+  to:
+    kind: Service
+    name: gateway-v1
+    weight: 100
+  wildcardPolicy: None

@@ -36,3 +36,7 @@ This use case is designed to demonstrate how the size and complexity of the Isti
 
 ### Soft Multi-Tenancy with a Shared Gateway
 This scenario provides a simple example of how to achieve multi-tenancy in Istio without requiring a separate gateway for each tenant. It uses a shared Istio gateway, separate tenant namespaces, and tenant-specific `VirtualService` configurations to balance isolation and resource utilization.
+
+### Zone aware Routing for locality based service responses
+This use case demonstrates three different ways to get best possible routing decision when considering multi-cluster and or firesection zones.
+

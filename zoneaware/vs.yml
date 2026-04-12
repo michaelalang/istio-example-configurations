@@ -1,0 +1,20 @@
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: http
+spec:
+  exportTo:
+    - .
+  gateways:
+    - gateway-v1
+    - gateway-v2
+    - gateway-v3
+  hosts:
+    - http.apps.example.com
+  http:
+    - route:
+        - destination:
+            host: http
+            port:
+              number: 8080
+          weight: 100
