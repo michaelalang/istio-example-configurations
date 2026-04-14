@@ -1,0 +1,248 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: otel
+spec:
+  config:
+    connectors:
+      spanmetrics:
+        dimensions:
+          - name: k8s.namespace.name
+        events:
+          dimensions:
+            - name: k8s.namespace.name
+          enabled: true
+        exemplars:
+          enabled: true
+        metrics_flush_interval: 5s
+        namespace: span.metrics
+      routing/metrics:
+        table:
+        - context: metric
+          pipelines:
+          - metrics/coo/shard0
+          - metrics/coo/shard1
+          statement: route()
+    exporters:
+      debug:
+        sampling_initial: 5
+        sampling_thereafter: 200
+        verbosity: detailed
+      otlp_http/lokistack/application:
+        auth:
+          authenticator: bearertokenauth
+        endpoint: https://lokistack-gateway-http.${TENANT}.svc.cluster.local:8080/api/logs/v1/application/otlp
+        retry_on_failure:
+          enabled: true
+          initial_interval: 60s
+          max_elapsed_time: 600s
+          max_interval: 120s
+        sending_queue:
+          block_on_overflow: false
+          num_consumers: 20
+          queue_size: 2500
+          storage: file_storage
+        tls:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+      otlp_grpc/tempostack:
+        auth:
+          authenticator: bearertokenauth
+        endpoint: tempo-gateway.${TENANT}.svc.cluster.local:8090
+        headers:
+          X-Scope-OrgID: ${TENANT}
+        retry_on_failure:
+          enabled: true
+          initial_interval: 60s
+          max_elapsed_time: 600s
+          max_interval: 120s
+        sending_queue:
+          block_on_overflow: false
+          num_consumers: 20
+          queue_size: 2500
+          storage: file_storage
+        tls:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+      otlp_http/coo/shard0:
+        endpoint: http://prometheus-monitoring-stack-0.${TENANT}.svc.cluster.local:9090/api/v1/otlp
+        headers:
+          X-Prometheus-Remote-Write-Version: 0.1.0
+        retry_on_failure:
+          enabled: true
+          initial_interval: 60s
+          max_elapsed_time: 600s
+          max_interval: 120s
+        sending_queue:
+          block_on_overflow: false
+          num_consumers: 20
+          queue_size: 2500
+          storage: file_storage
+        timeout: 10s
+        tls:
+          insecure: true
+          insecure_skip_verify: true
+      otlp_http/coo/shard1:
+        endpoint: http://prometheus-monitoring-stack-1.${TENANT}.svc.cluster.local:9090/api/v1/otlp
+        headers:
+          X-Prometheus-Remote-Write-Version: 0.1.0
+        retry_on_failure:
+          enabled: true
+          initial_interval: 60s
+          max_elapsed_time: 600s
+          max_interval: 120s
+        sending_queue:
+          block_on_overflow: false
+          num_consumers: 20
+          queue_size: 2500
+          storage: file_storage
+        timeout: 10s
+        tls:
+          insecure: true
+          insecure_skip_verify: true
+    processors:
+      memory_limiter:
+        check_interval: 1s
+        limit_mib: 1000
+        spike_limit_percentage: 10
+      transform/addtenant:
+        error_mode: ignore
+        log_statements:
+          - context: log
+            statements:
+              - set(resource.attributes["tenant"], "${TENANT}")
+              - set(log.attributes["tenant"], "${TENANT}")
+        metric_statements:
+          - context: datapoint
+            statements:
+              - set(resource.attributes["tenant"], "${TENANT}")
+              - set(datapoint.attributes["tenant"], "${TENANT}")
+        trace_statements:
+          - context: span
+            statements:
+              - set(resource.attributes["tenant"], "${TENANT}")
+              - set(span.attributes["tenant"], "${TENANT}")
+    extensions:
+      bearertokenauth:
+        filename: /var/run/secrets/kubernetes.io/serviceaccount/token
+      file_storage:
+        compaction:
+          cleanup_on_start: true
+          directory: /queues/compact/
+          on_rebound: true
+          on_start: true
+          rebound_needed_threshold_mib: 4096
+          rebound_trigger_threshold_mib: 1024
+        create_directory: true
+        directory: /queues/work/
+        fsync: false
+        timeout: 10s
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+      prometheus:
+        config: {}
+        target_allocator:
+          collector_id: '${POD_NAME}'
+          endpoint: 'http://mesh-targetallocator:80'
+          interval: 30s
+    service:
+      extensions:
+      - bearertokenauth
+      - file_storage
+      pipelines:
+        logs:
+          exporters:
+            - otlp_grpc/lokistack
+          processors:
+            - transform/addtenant
+          receivers:
+            - otlp
+        metrics:
+          exporters:
+            - routing/metrics
+          processors:
+            - transform/addtenant
+          receivers:
+            - otlp
+            - prometheus
+            - spanmetrics
+        metrics/coo/shard0:
+          exporters:
+            - otlp_http/coo/shard0
+          receivers:
+            - routing/metrics
+        metrics/coo/shard1: 
+          exporters:
+            - otlp_http/coo/shard1
+          receivers:
+            - routing/metrics
+        traces:
+          exporters:
+            - otlp_grpc/tempostack
+            - spanmetrics
+          processors:
+            - transform/addtenant
+          receivers:
+            - otlp
+      telemetry:
+        metrics:
+          readers:
+            - pull:
+                exporter:
+                  prometheus:
+                    host: 0.0.0.0
+                    port: 8888
+  configVersions: 1
+  env:
+  - name: KUBE_NODE_NAME
+    valueFrom:
+      fieldRef:
+        apiVersion: v1
+        fieldPath: spec.nodeName
+  - name: TENANT
+    value: tenanta
+  daemonSetUpdateStrategy: {}
+  deploymentUpdateStrategy: {}
+  ingress:
+    route: {}
+  ipFamilyPolicy: SingleStack
+  managementState: managed
+  mode: deployment
+  networkPolicy:
+    enabled: true
+  observability:
+    metrics: {}
+  podAnnotations:
+    kubectl.kubernetes.io/default-container: otc-container
+    sidecar.istio.io/nativeSidecar: 'true'
+  podDnsConfig: {}
+  replicas: 1
+  resources: {}
+  targetAllocator:
+    allocationStrategy: consistent-hashing
+    collectorNotReadyGracePeriod: 30s
+    collectorTargetReloadInterval: 30s
+    filterStrategy: relabel-config
+    observability:
+      metrics: {}
+    prometheusCR:
+      scrapeInterval: 30s
+    resources: {}
+  upgradeStrategy: automatic
+  volumeClaimTemplates:
+  - metadata:
+      name: otel-queue
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Gi
+      storageClassName: ocs-storagecluster-ceph-rbd
+  volumeMounts:
+  - mountPath: /queues
+    name: otel-queue
+

@@ -1,0 +1,32 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: TargetAllocator
+metadata:
+  name: mesh
+spec:
+  observability:
+    metrics:
+      enableMetrics: true
+  filterStrategy: relabel-config
+  managementState: managed
+  allocationStrategy: consistent-hashing
+  serviceAccount: ta
+  prometheusCR:
+    enabled: true
+    podMonitorSelector:
+      matchExpressions:
+        - key: tenant
+          operator: In
+          values:
+            - tenantc
+    scrapeInterval: 30s
+    serviceMonitorSelector:
+      matchExpressions:
+        - key: tenant
+          operator: In
+          values:
+            - tenantc
+  replicas: 1
+  collectorNotReadyGracePeriod: 30s
+  ipFamilyPolicy: SingleStack
+  podAnnotations:
+    sidecar.istio.io/nativeSidecar: 'true'
