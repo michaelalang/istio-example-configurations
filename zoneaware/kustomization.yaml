@@ -13,6 +13,11 @@ resources:
 - http-v1.yml
 - http-v2.yml
 - http-v3.yml
+- backend-v1.yml
+- backend-v2.yml
+- backend-v3.yml
+- dr-backend.yml
+- backend-svc.yml
 - namespace.yml
 - pullsecret.yml
 - rbac.yml

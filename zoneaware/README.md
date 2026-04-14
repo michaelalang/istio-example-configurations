@@ -220,6 +220,74 @@ I've included a quick monitoring script to record the response hostname from the
 
 ![VictoriaMetrics localitybased LoadBalancing visualization](pictures/lb-vm.png)
 
+## backend verification
+
+We've already verified that the http frontend behaves as configured in locality loadbalancing, now let's verify the same for the backend
+
+* scale backup all http deployments by executing following command
+
+```
+oc -n hcp1-ns1 scale --replicas=1 deploy/http-v1 deploy/http-v2 deploy/http-v3
+```
+
+* execute following command to pass from `frontend` -> `backend` in locality based manner
+
+```
+while /bin/true ; do 
+  curl 'https://http.apps.example.com/proxy/?proxy=http://backend:8080' -H 'zone: zone1' -s | \
+  jq -r '.body|fromjson|.env|.HOSTNAME'
+  sleep .5 
+done
+```
+
+* ensure we get proper zone aligned responses
+
+```
+backend-v1-7dbdd76c-n58vk
+backend-v1-7dbdd76c-n58vk
+backend-v1-7dbdd76c-n58vk
+backend-v1-7dbdd76c-n58vk
+backend-v1-7dbdd76c-n58vk
+```
+
+* scale down backend-v1 by executing following command
+
+```
+oc -n hcp1-ns1 scale --replicas=0 deploy/backend-v1
+```
+
+* the backend shall switch transparently to the next locality zone
+
+```
+backend-v1-7dbdd76c-n58vk
+backend-v1-7dbdd76c-n58vk
+backend-v1-7dbdd76c-n58vk
+backend-v1-7dbdd76c-n58vk
+backend-v2-7d56d9dbb8-jwlsv
+backend-v2-7d56d9dbb8-jwlsv
+backend-v2-7d56d9dbb8-jwlsv
+backend-v2-7d56d9dbb8-jwlsv
+```
+
+* scale down backend-v2 by executing following command
+
+```
+oc -n hcp1-ns1 scale --replicas=0 deploy/backend-v2
+```
+
+* the backend shall switch transparently to the next locality zone
+
+```
+backend-v2-7d56d9dbb8-jwlsv
+backend-v2-7d56d9dbb8-jwlsv
+backend-v2-7d56d9dbb8-jwlsv
+backend-v2-7d56d9dbb8-jwlsv
+backend-v3-5f9b797f7b-lvmzm
+backend-v3-5f9b797f7b-lvmzm
+backend-v3-5f9b797f7b-lvmzm
+backend-v3-5f9b797f7b-lvmzm
+```
+
 # Conclusion: Zone Aware Routing Showcase
 
 In this demonstration, we showcased how to configure and validate locality-based load balancing in a ServiceMesh to ensure the most efficient routing decisions across multi-cluster and multi-zone environments.

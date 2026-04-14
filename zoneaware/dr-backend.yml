@@ -1,0 +1,20 @@
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: backend
+spec:
+  host: backend.hcp1-ns1.svc.cluster.local
+  trafficPolicy:
+    loadBalancer:
+      localityLbSetting:
+        enabled: true
+        failover:
+          - from: lab/hcp1/zone3
+            to: lab/hcp1/zone4
+          - from: lab/hcp1/zone4
+            to: lab/hcp1-backup/zone5
+    outlierDetection:
+      baseEjectionTime: 30s
+      consecutive5xxErrors: 3
+      interval: 10s
+      maxEjectionPercent: 100

@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations: {}
+  name: backend-v3
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: backend
+      version: v3
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        inject.istio.io/templates: sidecar,spire
+        sidecar.istio.io/nativeSidecar: 'true'
+      creationTimestamp: null
+      labels:
+        app: backend
+        istio-locality: lab.hcp1-backup.zone5
+        sidecar.istio.io/inject: 'true'
+        spiffe.io/spire-managed-identity: 'true'
+        version: v3
+    spec:
+      containers:
+        - image: quay.io/rhn_support_milang/mockbin:aio-py3.13
+          imagePullPolicy: IfNotPresent
+          name: container
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+            - 'trap "exit 0" SIGTERM SIGINT;
+
+              while true; do sleep 10 & wait $!; done
+
+              '
+          command:
+            - /bin/sh
+            - -c
+          image: quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:9bd872f8adc3138f7c3bd8267aa1a8ecb5cd2e7f3385b8434a684cfd52093909
+          imagePullPolicy: IfNotPresent
+          name: curl
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+        - name: quayio
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
