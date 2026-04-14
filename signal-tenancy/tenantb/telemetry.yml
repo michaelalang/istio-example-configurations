@@ -1,0 +1,18 @@
+apiVersion: telemetry.istio.io/v1
+kind: Telemetry
+metadata:
+  name: tenantb
+spec:
+  accessLogging:
+    - disabled: false
+      providers:
+        - name: tenantb
+  metrics:
+    - overrides:
+        - disabled: false
+      providers:
+        - name: prometheus
+  tracing:
+    - providers:
+        - name: tenantb
+      randomSamplingPercentage: 100

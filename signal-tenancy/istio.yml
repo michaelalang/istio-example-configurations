@@ -1,0 +1,259 @@
+apiVersion: sailoperator.io/v1
+kind: Istio
+metadata:
+  name: default
+spec:
+  namespace: istio-system
+  updateStrategy:
+    inactiveRevisionDeletionGracePeriodSeconds: 30
+    type: InPlace
+  values:
+    global:
+      configCluster: true
+      istioNamespace: istio-system
+      logAsJson: true
+      logging:
+        level: http:debug,http2:debug,router:debug,rbac:debug
+      platform: openshift
+    meshConfig:
+      defaultProviders:
+        tracing:
+          - default
+      discoverySelectors:
+        - matchExpressions:
+            - key: maistra.io/member-of
+              operator: DoesNotExist
+            - key: istio.io/rev
+              operator: Exists
+            - key: istio.io/rev
+              operator: In
+              values:
+                - default
+            - key: istio.io/dataplane-mode
+              operator: DoesNotExist
+      extensionProviders:
+        - name: default
+          opentelemetry:
+            port: 4317
+            service: otel-collector.istio-system.svc.cluster.local
+        - name: tenanta
+          opentelemetry:
+            port: 4317
+            service: otel-collector.tenanta.svc.cluster.local
+        - name: tenantb
+          opentelemetry:
+            port: 4317
+            service: otel-collector.tenantb.svc.cluster.local
+        - name: tenantc
+          opentelemetry:
+            port: 4317
+            service: otel-collector.tenantb.svc.cluster.local
+        - name: defaultlog
+          envoyOtelAls:
+            logFormat:
+              labels:
+                envoy.cluster: '%ENVIRONMENT(ISTIO_META_MESH_ID)%'
+                envoy.duration: '%DURATION%'
+                envoy.flags: '%RESPONSE_FLAGS_LONG%'
+                envoy.name: '%ROUTE_NAME%'
+                envoy.protocol: '%PROTOCOL%'
+                envoy.upstream_cluster: '%UPSTREAM_CLUSTER_RAW%'
+                envoy.upstream_cluster.name: '%UPSTREAM_HOST_NAME%'
+                envoy.upstreamprotocol: '%UPSTREAM_PROTOCOL%'
+                hostname: '%ENVIRONMENT(ISTIO_META_NODE_NAME)%'
+                http.request.header.forwarded: '%REQ(X-FORWARDED-FOR)%'
+                http.request.method: '%REQ(:METHOD)%'
+                http.request.size: '%BYTES_RECEIVED%'
+                http.response.size: '%BYTES_SENT%'
+                http.response.status_code: '%RESPONSE_CODE%'
+                http.response.status_detail: '%RESPONSE_CODE_DETAILS(X)%'
+                http.route: '%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%'
+                k8s.container.name: '%ENVIRONMENT(POD_NAME)%'
+                k8s.namespace.name: '%ENVIRONMENT(POD_NAMESPACE)%'
+                k8s.node.name: '%ENVIRONMENT(ISTIO_META_NODE_NAME)%'
+                kubernetes.container_name: '%ENVIRONMENT(POD_NAME)%'
+                kubernetes.host: '%ENVIRONMENT(ISTIO_META_NODE_NAME)%'
+                kubernetes.namespace_name: '%ENVIRONMENT(POD_NAMESPACE)%'
+                kubernetes.pod_name: '%ENVIRONMENT(POD_NAME)%'
+                log.iostream: envoy
+                log.type: application
+                network.peer.address: '%UPSTREAM_CLUSTER_RAW%'
+                network.protocol.version: '%UPSTREAM_PROTOCOL%'
+                network.transport: '%PROTOCOL%'
+                openshift.cluster.uid: 95673ddb-dc55-4990-881a-33579f9be3c6
+                openshift.log.source: envoy
+                openshift.log.type: application
+                server.address: '%REQ(:AUTHORITY)%'
+                service.name: '%ENVIRONMENT(ISTIO_META_WORKLOAD_NAME)%'
+                service.namespace: '%ENVIRONMENT(POD_NAMESPACE)%'
+                trace_id: '%TRACE_ID%'
+                user-agent.original: '%REQ(USER-AGENT)%'
+              text: '[%START_TIME%] %REQ(:METHOD)% %REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%
+                %PROTOCOL% %RESPONSE_CODE% %RESPONSE_FLAGS% %BYTES_RECEIVED% %BYTES_SENT%
+                %DURATION% %RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)% %REQ(X-FORWARDED-FOR)%
+                %REQ(USER-AGENT)% %REQ(X-REQUEST-ID)% %REQ(:AUTHORITY)% %UPSTREAM_HOST%
+                %VIRTUAL_CLUSTER_NAME%'
+            logName: envoy_accesslog
+            port: 4317
+            service: otel-collector.istio-system.svc.cluster.local
+        - name: tenantalog
+          envoyOtelAls:
+            logFormat:
+              labels:
+                envoy.cluster: '%ENVIRONMENT(ISTIO_META_MESH_ID)%'
+                envoy.duration: '%DURATION%'
+                envoy.flags: '%RESPONSE_FLAGS_LONG%'
+                envoy.name: '%ROUTE_NAME%'
+                envoy.protocol: '%PROTOCOL%'
+                envoy.upstream_cluster: '%UPSTREAM_CLUSTER_RAW%'
+                envoy.upstream_cluster.name: '%UPSTREAM_HOST_NAME%'
+                envoy.upstreamprotocol: '%UPSTREAM_PROTOCOL%'
+                hostname: '%ENVIRONMENT(ISTIO_META_NODE_NAME)%'
+                http.request.header.forwarded: '%REQ(X-FORWARDED-FOR)%'
+                http.request.method: '%REQ(:METHOD)%'
+                http.request.size: '%BYTES_RECEIVED%'
+                http.response.size: '%BYTES_SENT%'
+                http.response.status_code: '%RESPONSE_CODE%'
+                http.response.status_detail: '%RESPONSE_CODE_DETAILS(X)%'
+                http.route: '%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%'
+                k8s.container.name: '%ENVIRONMENT(POD_NAME)%'
+                k8s.namespace.name: '%ENVIRONMENT(POD_NAMESPACE)%'
+                k8s.node.name: '%ENVIRONMENT(ISTIO_META_NODE_NAME)%'
+                kubernetes.container_name: '%ENVIRONMENT(POD_NAME)%'
+                kubernetes.host: '%ENVIRONMENT(ISTIO_META_NODE_NAME)%'
+                kubernetes.namespace_name: '%ENVIRONMENT(POD_NAMESPACE)%'
+                kubernetes.pod_name: '%ENVIRONMENT(POD_NAME)%'
+                log.iostream: envoy
+                log.type: application
+                network.peer.address: '%UPSTREAM_CLUSTER_RAW%'
+                network.protocol.version: '%UPSTREAM_PROTOCOL%'
+                network.transport: '%PROTOCOL%'
+                openshift.cluster.uid: 95673ddb-dc55-4990-881a-33579f9be3c6
+                openshift.log.source: envoy
+                openshift.log.type: application
+                server.address: '%REQ(:AUTHORITY)%'
+                service.name: '%ENVIRONMENT(ISTIO_META_WORKLOAD_NAME)%'
+                service.namespace: '%ENVIRONMENT(POD_NAMESPACE)%'
+                trace_id: '%TRACE_ID%'
+                user-agent.original: '%REQ(USER-AGENT)%'
+              text: '[%START_TIME%] %REQ(:METHOD)% %REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%
+                %PROTOCOL% %RESPONSE_CODE% %RESPONSE_FLAGS% %BYTES_RECEIVED% %BYTES_SENT%
+                %DURATION% %RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)% %REQ(X-FORWARDED-FOR)%
+                %REQ(USER-AGENT)% %REQ(X-REQUEST-ID)% %REQ(:AUTHORITY)% %UPSTREAM_HOST%
+                %VIRTUAL_CLUSTER_NAME%'
+            logName: envoy_accesslog
+            port: 4317
+            service: otel-collector.tenanta.svc.cluster.local
+        - name: tenantblog
+          envoyOtelAls:
+            logFormat:
+              labels:
+                envoy.cluster: '%ENVIRONMENT(ISTIO_META_MESH_ID)%'
+                envoy.duration: '%DURATION%'
+                envoy.flags: '%RESPONSE_FLAGS_LONG%'
+                envoy.name: '%ROUTE_NAME%'
+                envoy.protocol: '%PROTOCOL%'
+                envoy.upstream_cluster: '%UPSTREAM_CLUSTER_RAW%'
+                envoy.upstream_cluster.name: '%UPSTREAM_HOST_NAME%'
+                envoy.upstreamprotocol: '%UPSTREAM_PROTOCOL%'
+                hostname: '%ENVIRONMENT(ISTIO_META_NODE_NAME)%'
+                http.request.header.forwarded: '%REQ(X-FORWARDED-FOR)%'
+                http.request.method: '%REQ(:METHOD)%'
+                http.request.size: '%BYTES_RECEIVED%'
+                http.response.size: '%BYTES_SENT%'
+                http.response.status_code: '%RESPONSE_CODE%'
+                http.response.status_detail: '%RESPONSE_CODE_DETAILS(X)%'
+                http.route: '%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%'
+                k8s.container.name: '%ENVIRONMENT(POD_NAME)%'
+                k8s.namespace.name: '%ENVIRONMENT(POD_NAMESPACE)%'
+                k8s.node.name: '%ENVIRONMENT(ISTIO_META_NODE_NAME)%'
+                kubernetes.container_name: '%ENVIRONMENT(POD_NAME)%'
+                kubernetes.host: '%ENVIRONMENT(ISTIO_META_NODE_NAME)%'
+                kubernetes.namespace_name: '%ENVIRONMENT(POD_NAMESPACE)%'
+                kubernetes.pod_name: '%ENVIRONMENT(POD_NAME)%'
+                log.iostream: envoy
+                log.type: application
+                network.peer.address: '%UPSTREAM_CLUSTER_RAW%'
+                network.protocol.version: '%UPSTREAM_PROTOCOL%'
+                network.transport: '%PROTOCOL%'
+                openshift.cluster.uid: 95673ddb-dc55-4990-881a-33579f9be3c6
+                openshift.log.source: envoy
+                openshift.log.type: application
+                server.address: '%REQ(:AUTHORITY)%'
+                service.name: '%ENVIRONMENT(ISTIO_META_WORKLOAD_NAME)%'
+                service.namespace: '%ENVIRONMENT(POD_NAMESPACE)%'
+                trace_id: '%TRACE_ID%'
+                user-agent.original: '%REQ(USER-AGENT)%'
+              text: '[%START_TIME%] %REQ(:METHOD)% %REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%
+                %PROTOCOL% %RESPONSE_CODE% %RESPONSE_FLAGS% %BYTES_RECEIVED% %BYTES_SENT%
+                %DURATION% %RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)% %REQ(X-FORWARDED-FOR)%
+                %REQ(USER-AGENT)% %REQ(X-REQUEST-ID)% %REQ(:AUTHORITY)% %UPSTREAM_HOST%
+                %VIRTUAL_CLUSTER_NAME%'
+            logName: envoy_accesslog
+            port: 4317
+            service: otel-collector.tenantb.svc.cluster.local
+        - name: tenantclog
+          envoyOtelAls:
+            logFormat:
+              labels:
+                envoy.cluster: '%ENVIRONMENT(ISTIO_META_MESH_ID)%'
+                envoy.duration: '%DURATION%'
+                envoy.flags: '%RESPONSE_FLAGS_LONG%'
+                envoy.name: '%ROUTE_NAME%'
+                envoy.protocol: '%PROTOCOL%'
+                envoy.upstream_cluster: '%UPSTREAM_CLUSTER_RAW%'
+                envoy.upstream_cluster.name: '%UPSTREAM_HOST_NAME%'
+                envoy.upstreamprotocol: '%UPSTREAM_PROTOCOL%'
+                hostname: '%ENVIRONMENT(ISTIO_META_NODE_NAME)%'
+                http.request.header.forwarded: '%REQ(X-FORWARDED-FOR)%'
+                http.request.method: '%REQ(:METHOD)%'
+                http.request.size: '%BYTES_RECEIVED%'
+                http.response.size: '%BYTES_SENT%'
+                http.response.status_code: '%RESPONSE_CODE%'
+                http.response.status_detail: '%RESPONSE_CODE_DETAILS(X)%'
+                http.route: '%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%'
+                k8s.container.name: '%ENVIRONMENT(POD_NAME)%'
+                k8s.namespace.name: '%ENVIRONMENT(POD_NAMESPACE)%'
+                k8s.node.name: '%ENVIRONMENT(ISTIO_META_NODE_NAME)%'
+                kubernetes.container_name: '%ENVIRONMENT(POD_NAME)%'
+                kubernetes.host: '%ENVIRONMENT(ISTIO_META_NODE_NAME)%'
+                kubernetes.namespace_name: '%ENVIRONMENT(POD_NAMESPACE)%'
+                kubernetes.pod_name: '%ENVIRONMENT(POD_NAME)%'
+                log.iostream: envoy
+                log.type: application
+                network.peer.address: '%UPSTREAM_CLUSTER_RAW%'
+                network.protocol.version: '%UPSTREAM_PROTOCOL%'
+                network.transport: '%PROTOCOL%'
+                openshift.cluster.uid: 95673ddb-dc55-4990-881a-33579f9be3c6
+                openshift.log.source: envoy
+                openshift.log.type: application
+                server.address: '%REQ(:AUTHORITY)%'
+                service.name: '%ENVIRONMENT(ISTIO_META_WORKLOAD_NAME)%'
+                service.namespace: '%ENVIRONMENT(POD_NAMESPACE)%'
+                trace_id: '%TRACE_ID%'
+                user-agent.original: '%REQ(USER-AGENT)%'
+              text: '[%START_TIME%] %REQ(:METHOD)% %REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%
+                %PROTOCOL% %RESPONSE_CODE% %RESPONSE_FLAGS% %BYTES_RECEIVED% %BYTES_SENT%
+                %DURATION% %RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)% %REQ(X-FORWARDED-FOR)%
+                %REQ(USER-AGENT)% %REQ(X-REQUEST-ID)% %REQ(:AUTHORITY)% %UPSTREAM_HOST%
+                %VIRTUAL_CLUSTER_NAME%'
+            logName: envoy_accesslog
+            port: 4317
+            service: otel-collector.tenantc.svc.cluster.local
+      outboundTrafficPolicy:
+        mode: ALLOW_ANY
+      rootNamespace: istio-system
+      tlsDefaults:
+        cipherSuites:
+          - TLS_AES_256_GCM_SHA384
+          - TLS_CHACHA20_POLY1305_SHA256
+          - ECDHE-ECDSA-AES256-GCM-SHA384
+          - ECDHE-RSA-AES256-GCM-SHA384
+        minProtocolVersion: TLSV1_3
+    telemetry:
+      enabled: true
+      v2:
+        enabled: true
+        prometheus:
+          enabled: true
+  version: v1.28-latest
