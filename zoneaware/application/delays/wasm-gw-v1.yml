@@ -1,0 +1,20 @@
+apiVersion: extensions.istio.io/v1alpha1
+kind: WasmPlugin
+metadata:
+  name: gw-delay-v1
+  namespace: frontends
+spec:
+  imagePullPolicy: IfNotPresent
+  pluginConfig:
+    allow_missing_identity: true
+    allowed_namespaces: ["gateways"]
+    allowed_service_accounts: ["gw1","gw2"]
+    delays:
+      gw1: 0
+      gw2: 1000
+  url: oci://quay.io/rhn_support_milang/wasmdelay:v1
+  type: HTTP
+  selector:
+    matchLabels:
+      app: http
+      version: v1

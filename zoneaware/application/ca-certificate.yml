@@ -1,0 +1,25 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: example-ca
+  namespace: gateways
+spec:
+  isCA: true
+  commonName: Example
+  secretName: example-ca-root-secret
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: self-signed-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: example-cluster-issuer
+  namespace: gateways
+spec:
+  ca:
+    secretName: example-ca-root-secret

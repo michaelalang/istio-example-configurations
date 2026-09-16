@@ -1,0 +1,19 @@
+apiVersion: networking.istio.io/v1
+kind: ServiceEntry
+metadata:
+  name: local-otel-collector
+  namespace: istio-system
+spec:
+  endpoints:
+    - address: 127.0.0.1
+  hosts:
+    - otel-collector.local
+  ports:
+    - name: grpc-otel
+      number: 4317
+      protocol: GRPC
+    - name: http-otel
+      number: 4318
+      protocol: HTTP
+  resolution: STATIC
+---

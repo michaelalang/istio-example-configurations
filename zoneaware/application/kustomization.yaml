@@ -1,0 +1,41 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- clusterissuer.yml 
+- issuer.yml 
+- ca-certificate.yml
+- cert.yml
+- dr.yml
+- gateways-sa.yml
+- frontends-sa.yml 
+- backends-sa.yml
+- gateway-v1-svc.yml
+- gateway-v1.yml
+- gateway-v2-svc.yml
+- gateway-v2.yml
+- gateway-v1-cfg.yml
+- gateway-v2-cfg.yml
+- http-svc.yml
+- http-v1.yml
+- http-v2.yml
+- http-v3.yml
+- backend-v1.yml
+- backend-v2.yml
+- backend-v3.yml
+- dr-backend.yml
+- backend-svc.yml
+- gateways-namespace.yml
+- frontends-namespace.yml
+- backends-namespace.yml
+- rbac.yml
+- vs.yml
+- sidecar-frontends.yml
+- sidecar-backends.yml
+
+images:
+- name: docker.io/kennethreitz/httpbin
+  newName: quay.io/rhn_support_milang/mockbin
+  newTag: py3.14-hi
+- name: docker.io/curlimages/curl
+  newname: docker.io/curlimages/curl
+  newTag: latest

@@ -1,0 +1,91 @@
+apiVersion: sailoperator.io/v1
+kind: Istio
+metadata:
+  name: default
+spec:
+  namespace: istio-system
+  updateStrategy:
+    inactiveRevisionDeletionGracePeriodSeconds: 30
+    type: InPlace
+  values:
+    global:
+      configCluster: true
+      istioNamespace: istio-system
+      logAsJson: true
+      logging:
+        level: http:debug,http2:debug,router:debug,rbac:debug
+      meshID: east
+      meshNetworks:
+        east:
+          endpoints:
+            - fromRegistry: east
+          gateways:
+            - address: 192.168.160.3
+              port: 15443
+            - address: 192.168.160.4
+              port: 15443
+        west:
+          endpoints:
+            - fromRegistry: west
+          gateways:
+            - address: 192.168.160.3
+              port: 15443
+            - address: 192.168.160.4
+              port: 15443
+      multiCluster:
+        clusterName: east
+      network: east
+      platform: openshift
+      trustBundleName: east-ca-root-cert
+    meshConfig:
+      accessLogEncoding: JSON
+      defaultConfig:
+        gatewayTopology:
+          numTrustedProxies: 3
+        meshId: east
+        proxyMetadata:
+          ISTIO_META_DNS_CAPTURE: 'true'
+      defaultProviders:
+        tracing:
+          - otel
+      discoverySelectors:
+        - matchExpressions:
+            - key: istio.io/rev
+              operator: In
+              values:
+                - default
+            - key: istio.io/dataplane-mode
+              operator: DoesNotExist
+            - key: share.istio.io/east
+              operator: Exists
+      extensionProviders:
+        - name: otel
+          opentelemetry:
+            port: 4317
+            service: otel-collector.local
+      outboundTrafficPolicy:
+        mode: REGISTRY_ONLY
+      rootNamespace: istio-system
+      tlsDefaults:
+        cipherSuites:
+          - TLS_AES_256_GCM_SHA384
+          - TLS_CHACHA20_POLY1305_SHA256
+          - ECDHE-ECDSA-AES256-GCM-SHA384
+          - ECDHE-RSA-AES256-GCM-SHA384
+        minProtocolVersion: TLSV1_3
+      trustDomain: east.example.com
+    pilot:
+      autoscaleBehavior: {}
+      autoscaleEnabled: false
+      autoscaleMax: 2
+      autoscaleMin: 1
+      env:
+        ENABLE_ENHANCED_RESOURCE_SCOPING: 'true'
+        PILOT_FILTER_GATEWAY_CLUSTER_CONFIG: 'true'
+    telemetry:
+      enabled: true
+      v2:
+        enabled: true
+        prometheus:
+          enabled: true
+---

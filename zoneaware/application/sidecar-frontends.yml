@@ -1,0 +1,14 @@
+apiVersion: networking.istio.io/v1
+kind: Sidecar
+metadata:
+  name: default
+  namespace: frontends
+spec:
+  egress:
+    - hosts:
+        - ./*
+        - vmetrics/*
+        - backends/*
+        - istio-system/*
+  outboundTrafficPolicy:
+    mode: REGISTRY_ONLY

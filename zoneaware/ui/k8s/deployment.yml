@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lbmonitor
+  namespace: lbmonitor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lbmonitor
+  template:
+    metadata:
+      annotations:
+        sidecar.opentelemetry.io/inject: vmetrics
+      labels:
+        app: lbmonitor
+    spec:
+      serviceAccountName: lbmonitor
+      containers:
+      - name: lbmonitor
+        image: quay.io/rhn_support_milang/lbui:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080

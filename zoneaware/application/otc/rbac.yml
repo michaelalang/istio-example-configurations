@@ -1,0 +1,57 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: otel-collector-k8sattributes
+rules:
+  - apiGroups: [""]
+    resources:
+      - pods
+      - namespaces
+      - nodes
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources:
+      - daemonsets
+      - deployments
+      - statefulsets
+      - replicasets
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["batch"]
+    resources:
+      - jobs
+      - cronjobs
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: otel-collector-k8sattributes
+subjects:
+  - kind: ServiceAccount
+    name: gw1
+    namespace: gateways
+  - kind: ServiceAccount
+    name: gw2
+    namespace: gateways
+  - kind: ServiceAccount
+    name: frontend1
+    namespace: frontends
+  - kind: ServiceAccount
+    name: frontend2
+    namespace: frontends
+  - kind: ServiceAccount
+    name: frontend3
+    namespace: frontends
+  - kind: ServiceAccount
+    name: backend1
+    namespace: backends
+  - kind: ServiceAccount
+    name: backend2
+    namespace: backends
+  - kind: ServiceAccount
+    name: backend3
+    namespace: backends
+roleRef:
+  kind: ClusterRole
+  name: otel-collector-k8sattributes
+  apiGroup: rbac.authorization.k8s.io
