@@ -218,7 +218,7 @@ oc -n frontends patch destinationRule/http --type=merge -p '{"spec":{"trafficPol
 * remove all configurations by executing following command
 
 ```
-sudo KIND_EXPERIMENTAL_PROVIDER=podman /home/milang/bin/kind delete clusters openshiftanwendertreffen
+sudo KIND_EXPERIMENTAL_PROVIDER=podman kind delete clusters openshiftanwendertreffen
 ```
 
 * remove all system configurations by executing following command
