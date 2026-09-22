@@ -23,6 +23,8 @@ Adjust your Gateway injection template accordingly to your needs and preferred r
 
 ## Cluster Setup (KinD & MetalLB)
 
+**NOTE** since we need to access the IngressIP's rootless podman isn't working and you need sudo access to deploy the demo cluster
+
 This demo is designed to run locally using [KinD (Kubernetes in Docker)](https://kind.sigs.k8s.io/). To support `LoadBalancer` services locally, we use MetalLB.
 
 1. **Create the KinD Cluster:**
@@ -60,8 +62,19 @@ The demo uses `apps.example.com` as base domain to service application traffic. 
     * OpenTelemetry Collector and VictoriaMetrics for observability
 
 ```bash 
-oc create -k zoneaware/application
+oc create -k application
+oc create -k ui/k8s/
+oc -n frontends wait deploy/http-v1 deploy/http-v2 deploy/http-v3 --for=condition=Available --timeout=180s
+oc -n backends wait deploy/backend-v1 deploy/backend-v2 deploy/backend-v3 --for=condition=Available --timeout=180s
+oc -n lbmonitor wait deploy/lbmonitor --for=condition=Available --timeout=180s
 ```
+
+* after the deployments have been started ensure all resources are alligned (since we don't use a GitOps controller)
+
+```
+for x in gateways frontends backends lbmonitor ; do oc -n ${x} delete pod --all --wait=false ; done
+```
+
 
 #### Routing Legend:
 * Solid, Thick Arrows (==>): Represent the primary "stick" priority. Traffic is pinned to endpoints matching the originating gateway's specific Region.
@@ -128,193 +141,91 @@ flowchart TD
 
 ## Verification and configuration for the setup
 
-* execute a curl against the exposed service like 
+* execute following to start the UI
 ```
-$ for x in $(seq 1 5) ; do curl https://http.apps.example.com -s | jq -r .env.HOSTNAME ; done 
-http-v1-86875bfd55-rdgpj
-http-v2-6b8c89598c-w8nqq
-http-v1-86875bfd55-rdgpj
-http-v3-67747c7dd-rxgm5
-http-v3-67747c7dd-rxgm5
+oc -n lbmonitor wait deploy/lbmonitor --for=condition=Available --timeout=180s
+oc -n lbmonitor get service lbmonitor -o jsonpath='{.status.loadBalancer.ingress[0].ip}' ; echo
 ```
 
-* We can see Envoy using `LEAST_REQUEST` loadbalancing mechanism which shuffles the requests between all endpoints. 
-  since `http-v3` is in a different cluster it's expected that the latency is higher than on the other requests.
-* We do not want to jump the region and zone for the service so let's enforce sticking with one locality when hitting the ingress.
-* Update the `destinationRule` to enable localityBased LoadBalancing
+* Point your Browser against the IP on port `8080`
+
+![SimpleUI localitybased LoadBalancing](pictures/lbui001.png)
+
+
+* Ensure, locality loadbalancing is enabled by executing following command
 
 ```
 oc -n frontends patch destinationRule/http --type=merge -p '{"spec":{"trafficPolicy":{"loadBalancer":{"localityLbSetting":{"enabled":true}}}}}' 
 ```
 
-* repeat the curl against the exposed service 
+* The UI will show that only `http-v1` receives requests now.
 
-```
-for x in $(seq 1 5) ; do curl https://http.apps.example.com -s | jq -r .env.HOSTNAME ; done
-
-http-v1-86875bfd55-rdgpj
-http-v1-86875bfd55-rdgpj
-http-v1-86875bfd55-rdgpj
-http-v1-86875bfd55-rdgpj
-http-v1-86875bfd55-rdgpj
-```
+![localitybased LoadBalancing](pictures/lbui002.png)
 
 * hit the second Ingress Gateway to ensure, stickiness to the locality applies there too
 
-```
-for x in $(seq 1 5) ; do curl https://http.apps.example.com -sH 'zone: zone2' | jq -r .env.HOSTNAME ; done
+![localitybased LoadBalancing](pictures/lbui003.png)
 
-http-v2-6b8c89598c-w8nqq
-http-v2-6b8c89598c-w8nqq
-http-v2-6b8c89598c-w8nqq
-http-v2-6b8c89598c-w8nqq
-http-v2-6b8c89598c-w8nqq
-```
 
 ### verify locality based failover to region west
 
-* simulate an outage of the primary region (http-v1) by shutting down the service, execute the following
+* simulate an outage of the primary region (http-v1,backend-v1) by shutting down the service.
 
-```
-oc -n frontends scale --replicas=0 deploy/http-v1
-```
+![localitybased LoadBalancing](pictures/lbui004.png)
 
-* repeat the curl against the exposed service, **NOTE** Ingress is still available in that zone.
-
-```
-for x in $(seq 1 5) ; do curl https://http.apps.example.com -s | jq -r .env.HOSTNAME ; done
-
-http-v2-6b8c89598c-w8nqq
-http-v2-6b8c89598c-w8nqq
-http-v2-6b8c89598c-w8nqq
-http-v2-6b8c89598c-w8nqq
-http-v2-6b8c89598c-w8nqq
-```
-
-* the Gateway automatically switch to the second zone
+* the Gateway automatically switched to the second zone
 
 ### verify locality based failover to backup cluster
 
-* keep the outage of the primary region (http-v1)
-* simulate an outage of the secondary region (http-v2) by shutting down the service, execute the following
+* simulate an outage of the secondary region (http-v2,backend-v2) by shutting down the service.
+
+![localitybased LoadBalancing](pictures/lbui005.png)
+
+* check if switching the Ingress gateway uses http-v3 and backend-v3 as well.
+
+* scale up all instances again 
+
+![localitybased LoadBalancing](pictures/lbui006.png)
+
+## Zoneaware latency 
+
+* simulate an outage of the backend in the primary region (backend-v1) by shutting down the service.
+
+![localitybased LoadBalancing](pictures/lbui007.png)
+
+* backend failovers transparently but latency is increased (simulated to show-case cross-site costs)
+
+* simulate an outage of the backend in the secondary region (backend-v2) by shutting down the service.
+
+![localitybased LoadBalancing](pictures/lbui008.png)
+
+* backend failover transparently but latency increased even more (simulated)
+
+* simulate an outage of the frontend in the primary region (http-v1).
+
+![localitybased LoadBalancing](pictures/lbui009.png)
+
+* with ingress misalignment we increased the frontend latency and in addition the backend latency.
+
+* hit the second Ingress Gateway to algin ingress and frontend at least.
+
+![localitybased LoadBalancing](pictures/lbui010.png)
+
+* scale up all instances again
+
+## Cleanup
+
+* remove all configurations by executing following command
 
 ```
-oc -n frontends scale --replicas=0 deploy/http-v2
+sudo KIND_EXPERIMENTAL_PROVIDER=podman /home/milang/bin/kind delete clusters openshiftanwendertreffen
 ```
 
-* repeat the curl against the exposed service, **NOTE** Ingress is still available in that zone.
+* remove all system configurations by executing following command
 
 ```
-for x in $(seq 1 5) ; do curl https://http.apps.example.com -s | jq -r .env.HOSTNAME ; done
-
-http-v3-67747c7dd-rxgm5
-http-v3-67747c7dd-rxgm5
-http-v3-67747c7dd-rxgm5
-http-v3-67747c7dd-rxgm5
-http-v3-67747c7dd-rxgm5
-```
-
-* verify that Gateway-v2 in the secondary subzone sticks to the routing as well
-
-```
-for x in $(seq 1 5) ; do curl https://http.apps.example.com -sH 'zone: zone2' | jq -r .env.HOSTNAME ; done
-
-http-v3-67747c7dd-rxgm5
-http-v3-67747c7dd-rxgm5
-http-v3-67747c7dd-rxgm5
-http-v3-67747c7dd-rxgm5
-http-v3-67747c7dd-rxgm5
-```
-
-#### monitoring check
-
-We provide a Python-based real-time UI dashboard to visualize the locality-based load balancing in action. The UI connects to the cluster and continuously polls the frontend and backend services, displaying the request distribution and latency in real-time.
-
-Features of the UI:
-* Real-time tracking of request counts per pod (Frontend and Backend).
-* Live latency graphs to visualize the impact of cross-zone routing.
-* Interactive controls to scale down (shutdown) or scale up specific deployments directly from the dashboard to simulate outages and trigger failovers.
-* Dark/Light mode support.
-* Configurable target URI.
-
-To run the UI locally:
-```bash
-cd ui
-pip install -r requirements.txt
-python app.py
-```
-Then open `http://localhost:8080` in your browser.
-
-Alternatively, you can build and deploy it to your cluster using the provided Dockerfile and Kubernetes manifests in the `ui/k8s` directory.
-
-![VictoriaMetrics localitybased LoadBalancing visualization](pictures/lb-vm.png)
-
-## backend verification
-
-We've already verified that the http frontend behaves as configured in locality loadbalancing, now let's verify the same for the backend
-
-* scale backup all http deployments by executing following command
-
-```
-oc -n frontends scale --replicas=1 deploy/http-v1 deploy/http-v2 deploy/http-v3
-```
-
-* execute following command to pass from `frontend` -> `backend` in locality based manner
-
-```
-while /bin/true ; do 
-  curl 'https://http.apps.example.com/proxy/?proxy=http://backend:8080' -H 'zone: zone1' -s | \
-  jq -r '.body|fromjson|.env|.HOSTNAME'
-  sleep .5 
-done
-```
-
-* ensure we get proper zone aligned responses
-
-```
-backend-v1-7dbdd76c-n58vk
-backend-v1-7dbdd76c-n58vk
-backend-v1-7dbdd76c-n58vk
-backend-v1-7dbdd76c-n58vk
-backend-v1-7dbdd76c-n58vk
-```
-
-* scale down backend-v1 by executing following command
-
-```
-oc -n backends scale --replicas=0 deploy/backend-v1
-```
-
-* the backend shall switch transparently to the next locality zone
-
-```
-backend-v1-7dbdd76c-n58vk
-backend-v1-7dbdd76c-n58vk
-backend-v1-7dbdd76c-n58vk
-backend-v1-7dbdd76c-n58vk
-backend-v2-7d56d9dbb8-jwlsv
-backend-v2-7d56d9dbb8-jwlsv
-backend-v2-7d56d9dbb8-jwlsv
-backend-v2-7d56d9dbb8-jwlsv
-```
-
-* scale down backend-v2 by executing following command
-
-```
-oc -n backends scale --replicas=0 deploy/backend-v2
-```
-
-* the backend shall switch transparently to the next locality zone
-
-```
-backend-v2-7d56d9dbb8-jwlsv
-backend-v2-7d56d9dbb8-jwlsv
-backend-v2-7d56d9dbb8-jwlsv
-backend-v2-7d56d9dbb8-jwlsv
-backend-v3-5f9b797f7b-lvmzm
-backend-v3-5f9b797f7b-lvmzm
-backend-v3-5f9b797f7b-lvmzm
-backend-v3-5f9b797f7b-lvmzm
+sudo rm -f /etc/sysctl.d/99-kind-podman.conf
+sudo sysctl --system
 ```
 
 ## Conclusion: Zone Aware Routing Showcase

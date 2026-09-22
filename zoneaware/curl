@@ -1,0 +1,8 @@
+curl -k --resolve http.apps.example.com:443:10.89.0.200 -H "Content-Type: application/x-www-form-urlencoded" -d 'proxy=http://backend.backends.svc:8080/proxy/,http://backend-v1.backends.svc:8080/proxy/,http://backend-v2.backends.svc:8080/proxy/,http://backend-v3.backends.svc:8080/' https://http.apps.example.com/proxy/ -s | jq -r '
+  (.body | fromjson) as $h1 |
+  ($h1.body | fromjson) as $h2 |
+  ($h2.body | fromjson) as $h3 |
+  ($h3.body | fromjson) as $h4 |
+  $h1.headers, $h2.headers, $h3.headers, $h4.headers
+'
+

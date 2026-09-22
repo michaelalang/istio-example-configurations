@@ -10,7 +10,7 @@ spec:
       consistentHash:
         useSourceIp: false
       localityLbSetting:
-        enabled: true
+        enabled: false
         failover:
           - from: east
             to: west
