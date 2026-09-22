@@ -1,0 +1,9 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: example-ca-issuer
+  namespace: gateways
+spec:
+  ca:
+    secretName: example-ca-root-secret
+---

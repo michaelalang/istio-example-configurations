@@ -1,0 +1,9 @@
+apiVersion: sailoperator.io/v1
+kind: IstioCNI
+metadata:
+  name: default
+spec:
+  namespace: istio-system
+  profile: openshift
+  version: v1.30-latest
+---

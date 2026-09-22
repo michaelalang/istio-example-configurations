@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zoneaware Monitor Dashboard</title>
+  <link rel="stylesheet" href="https://unpkg.com/@patternfly/patternfly@6.0.0/patternfly.css" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://unpkg.com/@patternfly/patternfly@6.0.0/patternfly-addons.css" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .pf-v6-c-page { min-height: 100vh; }
+    .chart-container { height: 250px; margin-top: 20px; }
+    .grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+    .center-header { display: flex; justify-content: center; width: 100%; }
+    .center-content { text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="pf-v6-c-page">
+<body>
+  <div class="pf-v6-c-page">
+    <header class="pf-v6-c-masthead">
+      <div class="pf-v6-c-masthead__main" style="flex: 1;">
+        <span class="pf-v6-c-title pf-m-xl" style="padding-left: 20px;">Zoneaware Monitor</span>
+      </div>
+      <div class="pf-v6-c-masthead__content">
+        <button class="pf-v6-c-button pf-m-plain" type="button" id="themeToggleBtn" aria-label="Toggle dark mode">
+          <span class="pf-v6-c-button__icon">
+            <svg id="sunIcon" style="display: none; width: 16px; height: 16px;" fill="currentColor" viewBox="0 0 512 512"><path d="M361.5 1.2c5 2.1 8.6 6.6 9.6 11.9L391 121l107.9 19.8c5.3 1 9.8 4.6 11.9 9.6s1.5 10.7-1.6 15.2L446.9 256l62.3 90.3c3.1 4.5 3.7 10.2 1.6 15.2s-6.6 8.6-11.9 9.6L391 391 371.1 498.9c-1 5.3-4.6 9.8-9.6 11.9s-10.7 1.5-15.2-1.6L256 446.9l-90.3 62.3c-4.5 3.1-10.2 3.7-15.2 1.6s-8.6-6.6-9.6-11.9L121 391 13.1 371.1c-5.3-1-9.8-4.6-11.9-9.6s-1.5-10.7 1.6-15.2L65.1 256 2.8 165.7c-3.1-4.5-3.7-10.2-1.6-15.2s6.6-8.6 11.9-9.6L121 121 140.9 13.1c1-5.3 4.6-9.8 9.6-11.9s10.7-1.5 15.2 1.6L256 65.1l90.3-62.3c4.5-3.1 10.2-3.7 15.2-1.6zM256 384a128 128 0 1 0 0-256 128 128 0 1 0 0 256z"/></svg>
+            <svg id="moonIcon" style="width: 16px; height: 16px;" fill="currentColor" viewBox="0 0 384 512"><path d="M223.5 32C100 32 0 132.3 0 256S100 480 223.5 480c60.6 0 115.5-24.2 155.8-63.4c5-4.9 6.3-12.5 3.1-18.7s-10.1-9.7-17-8.5c-9.8 1.7-19.8 2.6-30.1 2.6c-96.9 0-175.5-78.8-175.5-176c0-65.8 36-123.1 89.3-153.3c6.1-3.5 9.2-10.5 7.7-17.3s-7.3-11.9-14.3-12.5c-6.3-.5-12.6-.8-19-.8z"/></svg>
+          </span>
+        </button>
+      </div>
+    </header>
+    <main class="pf-v6-c-page__main" tabindex="-1">
+      <section class="pf-v6-c-page__main-section pf-m-light center-content">
+        <h1>Real-time Pod Monitor</h1>
+        <p>Visualizing request counts and delays per pod for Frontend and Backend.</p>
+
+        <div style="margin-top: 20px; display: flex; justify-content: center; gap: 10px; align-items: center;">
+          <select id="uriInput" class="pf-v6-c-form-control" style="width: 300px;">
+            <option value="https://10.89.0.200">https://10.89.0.200</option>
+          </select>
+          <button class="pf-v6-c-button pf-m-secondary" type="button" id="updateUriBtn">Update URI</button>
+        </div>
+      </section>
+      
+      <section class="pf-v6-c-page__main-section">
+        <div style="display: flex; gap: 20px; align-items: flex-start;">
+          
+          <!-- Left Sidebar for Controls -->
+          <div style="flex: 0 0 250px; display: flex; flex-direction: column; gap: 15px; position: relative; z-index: 100;">
+            <div class="pf-v6-c-card" style="padding: 20px;">
+              <h2 class="pf-v6-c-title pf-m-lg" style="margin-bottom: 15px;">Controls</h2>
+              
+              <div style="position: relative; text-align: left; margin-bottom: 15px;" id="deploymentDropdownContainer">
+                <div style="background: var(--pf-v6-global--BackgroundColor--100); border: 1px solid var(--pf-v6-global--BorderColor--100); box-shadow: var(--pf-v6-global--BoxShadow--sm); width: 100%; padding: 10px; border-radius: 3px; color: var(--pf-v6-global--Color--100);" id="dropdownMenu">
+                  
+                  <div style="margin-bottom: 10px; padding: 8px; border: 1px solid var(--pf-v6-global--BorderColor--100); border-radius: 3px;">
+                    <strong style="display: block; margin-bottom: 5px; font-size: 0.9em; color: var(--pf-v6-global--Color--200);">v1 Instances</strong>
+                    <label style="display: block; margin-bottom: 3px; cursor: pointer;"><input type="checkbox" value="http-v1"> http-v1</label>
+                    <label style="display: block; cursor: pointer;"><input type="checkbox" value="backend-v1"> backend-v1</label>
+                  </div>
+
+                  <div style="margin-bottom: 10px; padding: 8px; border: 1px solid var(--pf-v6-global--BorderColor--100); border-radius: 3px;">
+                    <strong style="display: block; margin-bottom: 5px; font-size: 0.9em; color: var(--pf-v6-global--Color--200);">v2 Instances</strong>
+                    <label style="display: block; margin-bottom: 3px; cursor: pointer;"><input type="checkbox" value="http-v2"> http-v2</label>
+                    <label style="display: block; cursor: pointer;"><input type="checkbox" value="backend-v2"> backend-v2</label>
+                  </div>
+
+                  <div style="padding: 8px; border: 1px solid var(--pf-v6-global--BorderColor--100); border-radius: 3px;">
+                    <strong style="display: block; margin-bottom: 5px; font-size: 0.9em; color: var(--pf-v6-global--Color--200);">v3 Instances</strong>
+                    <label style="display: block; margin-bottom: 3px; cursor: pointer;"><input type="checkbox" value="http-v3"> http-v3</label>
+                    <label style="display: block; cursor: pointer;"><input type="checkbox" value="backend-v3"> backend-v3</label>
+                  </div>
+
+                </div>
+              </div>
+              
+              <button class="pf-v6-c-button pf-m-danger" type="button" id="shutdownBtn" style="width: 100%; margin-bottom: 10px;">
+                Shutdown Selected
+              </button>
+              <button class="pf-v6-c-button pf-m-primary" type="button" id="scaleUpBtn" style="width: 100%; margin-bottom: 15px;">
+                Scale Up Selected
+              </button>
+
+              <hr style="margin-bottom: 15px; border: 0; border-top: 1px solid var(--pf-v6-global--BorderColor--100);">
+
+              <button class="pf-v6-c-button pf-m-secondary" type="button" id="resetBtn" style="width: 100%; margin-bottom: 10px;">
+                Reset Counters
+              </button>
+              <button class="pf-v6-c-button pf-m-warning" type="button" id="toggleBtn" style="width: 100%;">
+                Stop Requests
+              </button>
+            </div>
+          </div>
+
+          <!-- Right Area for Stats -->
+          <div style="flex: 1;">
+            <div class="grid-container" style="margin-top: 0;">
+              <!-- Frontend Card -->
+              <div class="pf-v6-c-card">
+            <div class="pf-v6-c-card__title">Frontend Statistics</div>
+            <div class="pf-v6-c-card__body">
+              <table class="pf-v6-c-table pf-m-grid-md" id="frontendTable">
+                <thead>
+                  <tr>
+                    <th>Deployment</th>
+                    <th>Request Count</th>
+                    <th>Latest Delay (s)</th>
+                  </tr>
+                </thead>
+                <tbody id="frontendBody"></tbody>
+              </table>
+              <div class="chart-container">
+                <canvas id="frontendChart"></canvas>
+              </div>
+              <div class="chart-container">
+                <canvas id="frontendLatencyChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Backend Card -->
+          <div class="pf-v6-c-card">
+            <div class="pf-v6-c-card__title">Backend Statistics</div>
+            <div class="pf-v6-c-card__body">
+              <table class="pf-v6-c-table pf-m-grid-md" id="backendTable">
+                <thead>
+                  <tr>
+                    <th>Deployment</th>
+                    <th>Request Count</th>
+                    <th>Latest Delay (s)</th>
+                  </tr>
+                </thead>
+                <tbody id="backendBody"></tbody>
+              </table>
+              <div class="chart-container">
+                <canvas id="backendChart"></canvas>
+              </div>
+              <div class="chart-container">
+                <canvas id="backendLatencyChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const frontendBody = document.getElementById('frontendBody');
+    const backendBody = document.getElementById('backendBody');
+    const shutdownBtn = document.getElementById('shutdownBtn');
+    const scaleUpBtn = document.getElementById('scaleUpBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const toggleBtn = document.getElementById('toggleBtn');
+    const dropdownMenu = document.getElementById('dropdownMenu');
+    const uriInput = document.getElementById('uriInput');
+    const updateUriBtn = document.getElementById('updateUriBtn');
+
+    // URI Update Logic
+    async function submitUriUpdate() {
+      const newUri = uriInput.value.trim();
+      if (!newUri) return;
+      
+      try {
+        updateUriBtn.disabled = true;
+        const response = await fetch('/api/uri', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ uri: newUri })
+        });
+        const result = await response.json();
+        if (!response.ok) {
+          alert('Error: ' + result.message);
+        }
+      } catch (err) {
+        alert('Failed to update URI.');
+      } finally {
+        updateUriBtn.disabled = false;
+      }
+    }
+
+    updateUriBtn.addEventListener('click', submitUriUpdate);
+    
+    uriInput.addEventListener('change', submitUriUpdate);
+
+    // Theme Toggle Logic
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+    const sunIcon = document.getElementById('sunIcon');
+    const moonIcon = document.getElementById('moonIcon');
+
+    themeToggleBtn.addEventListener('click', () => {
+      document.documentElement.classList.toggle('pf-v6-theme-dark');
+      if (document.documentElement.classList.contains('pf-v6-theme-dark')) {
+        sunIcon.style.display = 'inline-block';
+        moonIcon.style.display = 'none';
+      } else {
+        sunIcon.style.display = 'none';
+        moonIcon.style.display = 'inline-block';
+      }
+    });
+
+    const podsData = {
+      frontend: {},
+      backend: {}
+    };
+    
+    // Store actual deployment replicas from Kubernetes
+    const deploymentReplicas = {};
+
+    const maxHistory = 60;
+    const timeLabels = Array(maxHistory).fill('');
+    
+    const colors = ['#0066cc', '#38812f', '#f4c145', '#ec7a08', '#cc0000', '#703fec', '#2b9af3', '#5cb85c'];
+    let colorIndex = 0;
+    const podColors = {};
+
+    function getPodColor(pod) {
+      if (!podColors[pod]) {
+        podColors[pod] = colors[colorIndex % colors.length];
+        colorIndex++;
+      }
+      return podColors[pod];
+    }
+
+    // Chart.js setup
+    const doughnutConfig = {
+      type: 'doughnut',
+      data: { labels: [], datasets: [{ data: [], backgroundColor: [] }] },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        plugins: { legend: { position: 'right' }, title: { display: true, text: 'Request Distribution' } }
+      }
+    };
+
+    const latencyConfig = {
+      type: 'line',
+      data: { labels: timeLabels, datasets: [] },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        scales: {
+          x: { display: false },
+          y: { beginAtZero: true, title: { display: true, text: 'Latency (s)' } }
+        },
+        plugins: { legend: { position: 'bottom' }, title: { display: true, text: 'Latency History' } }
+      }
+    };
+
+    const frontendChart = new Chart(document.getElementById('frontendChart'), JSON.parse(JSON.stringify(doughnutConfig)));
+    const backendChart = new Chart(document.getElementById('backendChart'), JSON.parse(JSON.stringify(doughnutConfig)));
+    const frontendLatencyChart = new Chart(document.getElementById('frontendLatencyChart'), JSON.parse(JSON.stringify(latencyConfig)));
+    const backendLatencyChart = new Chart(document.getElementById('backendLatencyChart'), JSON.parse(JSON.stringify(latencyConfig)));
+
+    function updateTableAndChart(target) {
+      const tbody = target === 'frontend' ? frontendBody : backendBody;
+      const chart = target === 'frontend' ? frontendChart : backendChart;
+      const latencyChart = target === 'frontend' ? frontendLatencyChart : backendLatencyChart;
+      const data = podsData[target];
+      
+      tbody.innerHTML = '';
+      
+      const labels = [];
+      const counts = [];
+      const bgColors = [];
+      const latencyDatasets = [];
+
+      for (const [pod, podData] of Object.entries(data)) {
+        const tr = document.createElement('tr');
+        
+        const tdPod = document.createElement('td');
+        
+        // Add a badge if this deployment is actually scaled to 0 in Kubernetes
+        if (deploymentReplicas[pod] === 0) {
+          tdPod.innerHTML = `${pod} <span class="pf-v6-c-badge pf-m-read" style="margin-left: 5px; font-size: 0.8em; background-color: var(--pf-v6-global--danger-color--100); color: white;">Shutdown</span>`;
+        } else {
+          tdPod.textContent = pod;
+        }
+        
+        const tdCount = document.createElement('td');
+        tdCount.textContent = podData.count;
+        
+        const tdDelay = document.createElement('td');
+        tdDelay.textContent = podData.delay.toFixed(3);
+        
+        if (podData.delay > 0) {
+          tr.style.backgroundColor = 'var(--pf-v6-global--success-color--100, #3e8635)';
+          tr.style.color = 'white';
+        } else {
+          tr.style.backgroundColor = 'var(--pf-v6-global--danger-color--100, #c9190b)';
+          tr.style.color = 'white';
+        }
+        
+        tr.appendChild(tdPod);
+        tr.appendChild(tdCount);
+        tr.appendChild(tdDelay);
+        tbody.appendChild(tr);
+
+        labels.push(pod);
+        counts.push(podData.count);
+        
+        const pColor = getPodColor(pod);
+        bgColors.push(pColor);
+
+        latencyDatasets.push({
+          label: pod,
+          data: podData.history,
+          borderColor: pColor,
+          borderWidth: 2,
+          fill: false,
+          pointRadius: 0,
+          tension: 0.1
+        });
+      }
+
+      chart.data.labels = labels;
+      chart.data.datasets[0].data = counts;
+      chart.data.datasets[0].backgroundColor = bgColors;
+      chart.update();
+
+      latencyChart.data.datasets = latencyDatasets;
+      latencyChart.update();
+    }
+
+    // WebSocket connection
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/ws`;
+    const ws = new WebSocket(wsUrl);
+
+    // Track last update time to drop latency to 0 if no requests are seen
+    const lastUpdateTimes = {
+      frontend: {},
+      backend: {}
+    };
+
+    // Global tick every 1 second to shift history for ALL pods
+    setInterval(() => {
+      const now = Date.now();
+      let needsUpdate = false;
+
+      for (const target of ['frontend', 'backend']) {
+        for (const pod of Object.keys(podsData[target])) {
+          const lastSeen = lastUpdateTimes[target][pod] || 0;
+          
+          // If no update in the last 3 seconds, push 0 latency
+          if (now - lastSeen > 3000) {
+            podsData[target][pod].delay = 0;
+            podsData[target][pod].history.push(0);
+          } else {
+            // Otherwise push the latest known delay
+            podsData[target][pod].history.push(podsData[target][pod].delay);
+          }
+
+          if (podsData[target][pod].history.length > maxHistory) {
+            podsData[target][pod].history.shift();
+          }
+          needsUpdate = true;
+        }
+        if (needsUpdate) updateTableAndChart(target);
+      }
+    }, 1000);
+
+    ws.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
+      if (msg.type === 'init') {
+        if (msg.uris && msg.uris.length > 0) {
+          uriInput.innerHTML = '';
+          msg.uris.forEach(u => {
+            const option = document.createElement('option');
+            option.value = u;
+            option.textContent = u;
+            uriInput.appendChild(option);
+          });
+        }
+        if (msg.uri) {
+          uriInput.value = msg.uri;
+        }
+        updateToggleBtn(msg.is_running);
+        
+        for (const target of ['frontend', 'backend']) {
+          for (const [pod, data] of Object.entries(msg.stats[target] || {})) {
+            podsData[target][pod] = { 
+              count: data.count, 
+              delay: data.latest_delay,
+              history: Array(maxHistory).fill(data.latest_delay)
+            };
+            lastUpdateTimes[target][pod] = Date.now();
+          }
+          updateTableAndChart(target);
+        }
+      } else if (msg.type === 'update') {
+        if (!podsData[msg.target][msg.pod]) {
+          podsData[msg.target][msg.pod] = { count: 0, delay: 0, history: Array(maxHistory).fill(0) };
+        }
+        podsData[msg.target][msg.pod].count = msg.count;
+        podsData[msg.target][msg.pod].delay = msg.delay;
+        lastUpdateTimes[msg.target][msg.pod] = Date.now();
+        
+        updateTableAndChart(msg.target);
+      } else if (msg.type === 'deployments_status') {
+        let changed = false;
+        for (const [dep, replicas] of Object.entries(msg.statuses)) {
+          if (deploymentReplicas[dep] !== replicas) {
+            deploymentReplicas[dep] = replicas;
+            changed = true;
+          }
+        }
+        if (changed) {
+          updateTableAndChart('frontend');
+          updateTableAndChart('backend');
+        }
+      } else if (msg.type === 'reset') {
+        for (const target of ['frontend', 'backend']) {
+          for (const pod of Object.keys(podsData[target])) {
+            podsData[target][pod].count = 0;
+          }
+          updateTableAndChart(target);
+        }
+      } else if (msg.type === 'toggle') {
+        updateToggleBtn(msg.is_running);
+      } else if (msg.type === 'uris') {
+        const currentVal = uriInput.value;
+        uriInput.innerHTML = '';
+        msg.uris.forEach(u => {
+          const option = document.createElement('option');
+          option.value = u;
+          option.textContent = u;
+          uriInput.appendChild(option);
+        });
+        if (msg.uris.includes(currentVal)) {
+          uriInput.value = currentVal;
+        }
+      }
+    };
+
+    ws.onclose = () => {
+      console.log('WebSocket disconnected');
+    };
+
+    // Scale buttons
+    async function handleScale(replicas) {
+      const checkboxes = dropdownMenu.querySelectorAll('input[type="checkbox"]:checked');
+      const selectedOptions = Array.from(checkboxes).map(cb => cb.value);
+      
+      if (selectedOptions.length === 0) {
+        return;
+      }
+
+      const action = replicas === 0 ? 'shutdown' : 'scale up';
+      try {
+        shutdownBtn.disabled = true;
+        scaleUpBtn.disabled = true;
+        
+        const response = await fetch('/api/scale', { 
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ deployments: selectedOptions, replicas: replicas })
+        });
+        if (response.ok) {
+          // Uncheck after successful initiation
+          checkboxes.forEach(cb => cb.checked = false);
+        } else {
+          const result = await response.json();
+          console.error('Error: ' + result.message);
+        }
+      } catch (err) {
+        console.error(`Failed to initiate ${action}.`);
+      } finally {
+        shutdownBtn.disabled = false;
+        scaleUpBtn.disabled = false;
+      }
+    }
+
+    shutdownBtn.addEventListener('click', () => handleScale(0));
+    scaleUpBtn.addEventListener('click', () => handleScale(1));
+    
+    resetBtn.addEventListener('click', async () => {
+      try {
+        resetBtn.disabled = true;
+        const response = await fetch('/api/reset', { method: 'POST' });
+        if (!response.ok) {
+          const result = await response.json();
+          alert('Error: ' + result.message);
+        }
+      } catch (err) {
+        alert('Failed to reset counters.');
+      } finally {
+        resetBtn.disabled = false;
+      }
+    });
+
+    function updateToggleBtn(isRunning) {
+      if (isRunning) {
+        toggleBtn.textContent = 'Stop Requests';
+        toggleBtn.classList.remove('pf-m-success');
+        toggleBtn.classList.add('pf-m-warning');
+      } else {
+        toggleBtn.textContent = 'Start Requests';
+        toggleBtn.classList.remove('pf-m-warning');
+        toggleBtn.classList.add('pf-m-success');
+      }
+    }
+
+    toggleBtn.addEventListener('click', async () => {
+      try {
+        toggleBtn.disabled = true;
+        const response = await fetch('/api/toggle', { method: 'POST' });
+        if (!response.ok) {
+          const result = await response.json();
+          alert('Error: ' + result.message);
+        }
+      } catch (err) {
+        alert('Failed to toggle requests.');
+      } finally {
+        toggleBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

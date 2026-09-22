@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: metrics
+  namespace: vmetrics
+spec:
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+    - port: 8428
+      protocol: TCP
+      targetPort: 8428
+      appProtocol: http
+  selector:
+    app: vmetrics
+  sessionAffinity: None
+  trafficDistribution: PreferSameZone
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: logs
+  namespace: vmetrics
+spec:
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+    - port: 9428
+      protocol: TCP
+      targetPort: 9428
+      appProtocol: http
+  selector:
+    app: vmetrics
+  sessionAffinity: None
+  trafficDistribution: PreferSameZone
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: traces
+  namespace: vmetrics
+spec:
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+    - port: 10428
+      protocol: TCP
+      targetPort: 10428
+      appProtocol: http
+  selector:
+    app: vmetrics
+  sessionAffinity: None
+  trafficDistribution: PreferSameZone
+  type: ClusterIP
+---

@@ -1,0 +1,21 @@
+apiVersion: extensions.istio.io/v1alpha1
+kind: WasmPlugin
+metadata:
+  name: delay-v3
+  namespace: backends
+spec:
+  imagePullPolicy: IfNotPresent
+  pluginConfig:
+    allow_missing_identity: true
+    allowed_namespaces: ["frontends"]
+    allowed_service_accounts: ["frontend1", "frontend2", "frontend3"]
+    delays:
+      frontend1: 3000
+      frontend2: 3000
+      frontend3: 0
+  url: oci://quay.io/rhn_support_milang/wasmdelay:v1
+  type: HTTP
+  selector:
+    matchLabels:
+      app: backend
+      version: v3

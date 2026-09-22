@@ -1,0 +1,117 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  labels:
+    mode: sidecar
+  name: vmetrics
+spec:
+  env:
+    - name: MY_POD_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
+    - name: MY_POD_NAMESPACE
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.namespace
+    - name: MY_POD_LOCALITY
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.labels['istio-locality']
+  config:
+    connectors:
+      spanmetrics:
+        metrics_flush_interval: 1s
+        dimensions:
+          - name: k8s.namespace.name
+          - name: locality
+        events:
+          dimensions:
+            - name: k8s.namespace.name
+            - name: locality
+          enabled: true
+        exemplars:
+          enabled: true
+        metrics_flush_interval: 5s
+        namespace: span.metrics
+    exporters:
+      otlp_http/vmetrics:
+        endpoint: http://metrics.vmetrics.svc.cluster.local:8428/opentelemetry
+        tls:
+          insecure: true
+      otlp_http/logs:
+        endpoint: http://logs.vmetrics.svc.cluster.local:9428/insert/opentelemetry
+        headers:
+          VL-Msg-Field: body
+          VL-Time-Field: observedTimestamp
+        tls:
+          insecure: true
+      otlp_http/traces:
+        endpoint: http://traces.vmetrics.svc.cluster.local:10428/insert/opentelemetry
+        tls:
+          insecure: true
+    processors:
+      transform/add_pod_info:
+        error_mode: ignore
+        log_statements:
+          - set(resource.attributes["k8s.pod.name"], "${env:MY_POD_NAME}")
+          - set(resource.attributes["k8s.namespace.name"], "${env:MY_POD_NAMESPACE}")
+          - set(resource.attributes["locality"], "${env:MY_POD_LOCALITY}")
+        metric_statements:
+          - set(resource.attributes["k8s.pod.name"], "${env:MY_POD_NAME}")
+          - set(resource.attributes["k8s.namespace.name"], "${env:MY_POD_NAMESPACE}")
+          - set(resource.attributes["locality"], "${env:MY_POD_LOCALITY}")
+        trace_statements:
+          - set(resource.attributes["k8s.pod.name"], "${env:MY_POD_NAME}")
+          - set(resource.attributes["k8s.namespace.name"], "${env:MY_POD_NAMESPACE}")
+          - set(resource.attributes["locality"], "${env:MY_POD_LOCALITY}")
+      transform/enforce:
+        error_mode: ignore
+        log_statements:
+          - merge_maps(log.attributes, resource.attributes, "upsert")
+        metric_statements:
+          - set(datapoint.attributes["namespace"], resource.attributes["k8s.namespace.name"]) where resource.attributes["k8s.namespace.name"] != nil
+          - set(datapoint.attributes["locality"], resource.attributes["locality"]) where resource.attributes["locality"] != nil
+          - merge_maps(datapoint.attributes, resource.attributes, "upsert")
+        trace_statements:
+          - merge_maps(span.attributes, resource.attributes, "upsert")
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+    service:
+      pipelines:
+        logs:
+          exporters:
+            - otlp_http/logs
+          processors:
+            - transform/add_pod_info
+            - transform/enforce
+          receivers:
+            - otlp
+        metrics:
+          exporters:
+            - otlp_http/vmetrics
+          processors:
+            - transform/add_pod_info
+            - transform/enforce
+          receivers:
+            - spanmetrics
+            - otlp
+        traces:
+          exporters:
+            - otlp_http/traces
+            - spanmetrics
+          processors:
+            - transform/add_pod_info
+            - transform/enforce
+          receivers:
+            - otlp
+  mode: sidecar
+  image: docker.io/otel/opentelemetry-collector-contrib:0.158.0

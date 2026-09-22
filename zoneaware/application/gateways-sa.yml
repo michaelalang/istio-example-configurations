@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: gw1
+  namespace: gateways
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: gw2
+  namespace: gateways
+---
