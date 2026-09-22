@@ -31,6 +31,9 @@ resources:
 - vs.yml
 - sidecar-frontends.yml
 - sidecar-backends.yml
+- otc/
+- delays/
+- vmetrics/
 
 images:
 - name: docker.io/kennethreitz/httpbin

@@ -4,6 +4,7 @@ metadata:
   labels:
     mode: sidecar
   name: vmetrics
+  namespace: backends
 spec:
   env:
     - name: MY_POD_NAME
@@ -35,7 +36,6 @@ spec:
           enabled: true
         exemplars:
           enabled: true
-        metrics_flush_interval: 5s
         namespace: span.metrics
     exporters:
       otlp_http/vmetrics:

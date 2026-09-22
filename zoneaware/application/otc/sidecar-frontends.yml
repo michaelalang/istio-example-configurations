@@ -4,7 +4,7 @@ metadata:
   labels:
     mode: sidecar
   name: vmetrics
-  namespace: lbmonitor
+  namespace: frontends
 spec:
   env:
     - name: MY_POD_NAME
@@ -43,11 +43,14 @@ spec:
         tls:
           insecure: true
       otlp_http/logs:
-        endpoint: http://logs.vmetrics.svc.cluster.local:9428/opentelemetry
+        endpoint: http://logs.vmetrics.svc.cluster.local:9428/insert/opentelemetry
+        headers:
+          VL-Msg-Field: body
+          VL-Time-Field: observedTimestamp
         tls:
           insecure: true
       otlp_http/traces:
-        endpoint: http://traces.vmetrics.svc.cluster.local:10428/opentelemetry
+        endpoint: http://traces.vmetrics.svc.cluster.local:10428/insert/opentelemetry
         tls:
           insecure: true
     processors:

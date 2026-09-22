@@ -29,7 +29,7 @@ echo "Configuring MetalLB with IP range: $IP_RANGE"
 
 # 3. Install MetalLB
 echo "Installing MetalLB..."
-kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.14.3/config/manifests/metallb-native.yaml
+kubectl apply -f metallb-native.yml
 
 echo "Waiting for MetalLB pods to be ready..."
 kubectl wait --namespace metallb-system \
@@ -60,7 +60,7 @@ kubectl apply -f metallb-config.yaml
 
 # 5. Install cert-manager
 echo "Installing cert-manager..."
-kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.15.3/cert-manager.yaml
+kubectl apply -f cert-manager.yaml
 echo "Waiting for cert-manager pods to be ready..."
 kubectl wait --namespace cert-manager \
                 --for=condition=ready pod \
@@ -69,7 +69,7 @@ kubectl wait --namespace cert-manager \
 
 # 6. Install OpenTelemetry Operator
 echo "Installing OpenTelemetry Operator..."
-kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releases/latest/download/opentelemetry-operator.yaml
+kubectl apply -f opentelemetry-operator.yaml
 echo "Waiting for OpenTelemetry Operator pods to be ready..."
 kubectl wait --namespace opentelemetry-operator-system \
                 --for=condition=ready pod \
@@ -109,8 +109,9 @@ EOF
 
 # 7.1. Install Istio Sail Operator
 echo "Installing Istio Sail Operator..."
-helm repo add sail-operator https://istio-ecosystem.github.io/sail-operator
-helm repo update
-helm install sail-operator sail-operator/sail-operator --namespace sail-operator --create-namespace
+kubectl apply --server-side --force-conflicts -f sail-operator.yaml
+kubectl apply -k istio
+kubectl -n istio-system wait Istio/default --for=condition=Ready --timeout=180s
+kubectl -n istio-system wait deploy/istiod --for=condition=Available --timeout=180s
 
 echo "Kind cluster setup complete! MetalLB, cert-manager, OpenTelemetry Operator, and Istio Sail Operator are installed."
