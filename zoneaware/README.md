@@ -84,26 +84,26 @@ for x in gateways frontends backends lbmonitor ; do oc -n ${x} delete pod --all 
 ```mermaid
 flowchart TD
     %% External Ingress Traffic
-    InEast([Ingress Traffic]) --> GW1
     InWest([Ingress Traffic]) --> GW2
+    InEast([Ingress Traffic]) --> GW1
 
     %% Topology Boundaries
+    subgraph Region_West [Region: west]
+        direction TB
+        subgraph Zone_West1 [Zone: zone2]
+            subgraph Sub_West1 [Subzone: sub2]
+                GW2[gateway-v2]
+                SVC2(http-v2 endpoints)
+            end
+        end
+    end
+    
     subgraph Region_East [Region: east]
         direction TB
         subgraph Zone_East1 [Zone: zone1]
             subgraph Sub_East1 [Subzone: sub1]
                 GW1[gateway-v1]
                 SVC1(http-v1 endpoints)
-            end
-        end
-    end
-    
-    subgraph Region_West [Region: west]
-        direction TB
-        subgraph Zone_West1 [Zone: zone1]
-            subgraph Sub_West1 [Subzone: sub1]
-                GW2[gateway-v2]
-                SVC2(http-v2 endpoints)
             end
         end
     end
