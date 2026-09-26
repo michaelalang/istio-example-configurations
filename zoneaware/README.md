@@ -77,7 +77,7 @@ for x in gateways frontends backends lbmonitor ; do oc -n ${x} delete pod --all 
 
 
 #### Routing Legend:
-* Solid, Thick Arrows (==>): Represent the primary "stick" priority. Traffic is pinned to endpoints matching the originating gateway's specific Region.
+* Solid, Thick Arrows (==>): Represent the primary "stick" priority. Traffic is pinned to endpoints matching the originating source's specific Region.
 * Dotted Arrows (-.->): Represent the failover progression triggered only when the higher-priority endpoints become unavailable.
 * Topology Hierarchy: The nested boxes visualize the locality structure (east -> west -> backup) that Istio uses to calculate endpoint proximity for these failover rules.
 
@@ -94,6 +94,7 @@ flowchart TD
             subgraph Sub_West1 [Subzone: sub1]
                 GW2[gateway-v2]
                 SVC2(http-v2 endpoints)
+                BE2(backend-v2 endpoints)
             end
         end
     end
@@ -104,6 +105,7 @@ flowchart TD
             subgraph Sub_East1 [Subzone: sub1]
                 GW1[gateway-v1]
                 SVC1(http-v1 endpoints)
+                BE1(backend-v1 endpoints)
             end
         end
     end
@@ -113,6 +115,7 @@ flowchart TD
         subgraph Zone_Backup1 [Zone: zone1]
             subgraph Sub_Backup1 [Subzone: sub1]
                 SVC3(http-v3 endpoints)
+                BE3(backend-v3 endpoints)
             end
         end
     end
@@ -127,15 +130,30 @@ flowchart TD
     GW2 -.->|2. Failover| SVC1
     GW2 -.->|3. Failover| SVC3
 
+    %% HTTP 1 Routing Logic (East)
+    SVC1 ==>|1. Stick| BE1
+    SVC1 -.->|2. Failover| BE2
+    SVC1 -.->|3. Failover| BE3
+
+    %% HTTP 2 Routing Logic (West)
+    SVC2 ==>|1. Stick| BE2
+    SVC2 -.->|2. Failover| BE1
+    SVC2 -.->|3. Failover| BE3
+
+    %% HTTP 3 Routing Logic (Backup)
+    SVC3 ==>|1. Stick| BE3
+
     %% Styling and coloring for clarity
     classDef gateway fill:#e1f5fe,stroke:#0288d1,stroke-width:2px,color:#000
     classDef primary fill:#e8f5e9,stroke:#388e3c,stroke-width:2px,color:#000
+    classDef backend fill:#e6e6fa,stroke:#9370db,stroke-width:2px,color:#000
     classDef backup fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#000
     classDef ingress fill:#f5f5f5,stroke:#9e9e9e,stroke-width:1px,color:#000
     
     class GW1,GW2 gateway
     class SVC1,SVC2 primary
-    class SVC3 backup
+    class BE1,BE2 backend
+    class SVC3,BE3 backup
     class InEast,InWest ingress
 ```
 
