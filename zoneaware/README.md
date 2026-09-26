@@ -90,8 +90,8 @@ flowchart TD
     %% Topology Boundaries
     subgraph Region_West [Region: west]
         direction TB
-        subgraph Zone_West1 [Zone: zone2]
-            subgraph Sub_West1 [Subzone: sub2]
+        subgraph Zone_West1 [Zone: zone1]
+            subgraph Sub_West1 [Subzone: sub1]
                 GW2[gateway-v2]
                 SVC2(http-v2 endpoints)
             end
