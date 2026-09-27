@@ -33,7 +33,7 @@ resources:
 - sidecar-backends.yml
 - otc/
 - delays/
-- vmetrics/
+- metrics/
 
 images:
 - name: docker.io/kennethreitz/httpbin

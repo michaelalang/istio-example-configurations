@@ -3,7 +3,7 @@ kind: OpenTelemetryCollector
 metadata:
   labels:
     mode: sidecar
-  name: vmetrics
+  name: metrics
   namespace: backends
 spec:
   env:
@@ -38,19 +38,16 @@ spec:
           enabled: true
         namespace: span.metrics
     exporters:
-      otlp_http/vmetrics:
-        endpoint: http://metrics.vmetrics.svc.cluster.local:8428/opentelemetry
+      otlp_http/metrics:
+        metrics_endpoint: http://metrics.monitoring.svc.cluster.local:9090/api/v1/otlp/v1/metrics
         tls:
           insecure: true
       otlp_http/logs:
-        endpoint: http://logs.vmetrics.svc.cluster.local:9428/insert/opentelemetry
-        headers:
-          VL-Msg-Field: body
-          VL-Time-Field: observedTimestamp
+        logs_endpoint: http://logs.monitoring.svc.cluster.local:3100/otlp/v1/logs
         tls:
           insecure: true
       otlp_http/traces:
-        endpoint: http://traces.vmetrics.svc.cluster.local:10428/insert/opentelemetry
+        traces_endpoint: http://traces.monitoring.svc.cluster.local:4318/v1/traces
         tls:
           insecure: true
     processors:
@@ -97,7 +94,7 @@ spec:
             - otlp
         metrics:
           exporters:
-            - otlp_http/vmetrics
+            - otlp_http/metrics
           processors:
             - transform/add_pod_info
             - transform/enforce

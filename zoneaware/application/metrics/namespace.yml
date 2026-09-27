@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: vmetrics
+  name: monitoring
   labels:
     istio.io/rev: default
     share.istio.io/east: "true"

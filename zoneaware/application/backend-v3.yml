@@ -17,7 +17,7 @@ spec:
     metadata:
       annotations:
         sidecar.istio.io/nativeSidecar: 'true'
-        sidecar.opentelemetry.io/inject: vmetrics
+        sidecar.opentelemetry.io/inject: metrics
       creationTimestamp: null
       labels:
         app: backend

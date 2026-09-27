@@ -11,7 +11,7 @@ spec:
   template:
     metadata:
       annotations:
-        sidecar.opentelemetry.io/inject: vmetrics
+        sidecar.opentelemetry.io/inject: metrics
       labels:
         app: lbmonitor
     spec:

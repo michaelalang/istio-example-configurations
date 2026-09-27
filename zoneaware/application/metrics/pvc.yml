@@ -2,7 +2,7 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: data-logs
-  namespace: vmetrics
+  namespace: monitoring
 spec:
   accessModes:
     - ReadWriteOnce
@@ -15,7 +15,7 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: data-metrics
-  namespace: vmetrics
+  namespace: monitoring
 spec:
   accessModes:
     - ReadWriteOnce
@@ -28,7 +28,7 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: data-traces
-  namespace: vmetrics
+  namespace: monitoring
 spec:
   accessModes:
     - ReadWriteOnce

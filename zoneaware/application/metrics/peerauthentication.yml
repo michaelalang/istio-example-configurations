@@ -1,0 +1,16 @@
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: monitoring
+spec:
+  mtls:
+    mode: STRICT
+  portLevelMtls:
+    '3000':
+      mode: PERMISSIVE
+  selector:
+    matchLabels:
+      app: grafana
+---
+

@@ -20,7 +20,7 @@ spec:
       annotations:
         inject.istio.io/templates: gateway
         sidecar.istio.io/componentLogLevel: router:debug,http:debug,http2:debug
-        sidecar.opentelemetry.io/inject: vmetrics
+        sidecar.opentelemetry.io/inject: metrics
       creationTimestamp: null
       labels:
         istio: gateway-v1

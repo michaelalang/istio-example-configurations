@@ -7,7 +7,7 @@ spec:
   egress:
     - hosts:
         - ./*
-        - vmetrics/*
+        - monitoring/*
         - frontends/*
         - istio-system/*
   outboundTrafficPolicy:
